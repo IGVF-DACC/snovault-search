@@ -908,6 +908,22 @@ class AbstractQueryFactory:
             )
         )
 
+    def validate_paging_constraints(self):
+        from_value_as_int = self._get_from_value_as_int()
+        limit_value_as_int = self._get_limit_value_as_int()
+        max_result_window = self._get_max_result_window()
+        if self._limit_is_all() and from_value_as_int != 0:
+            msg = f'Invalid to specify from={from_value_as_int} and limit=all'
+            raise get_default_exception()(explanation=msg)
+        if self._should_scan_over_results() and from_value_as_int != 0:
+            msg = f'Invalid to paginate when requesting more than {max_result_window} results'
+            raise get_default_exception()(explanation=msg)
+        paging_depth = from_value_as_int + limit_value_as_int
+        if paging_depth >= max_result_window:
+            msg = f'Paging depth {paging_depth} exceeds max depth of {max_result_window}'
+            raise get_default_exception()(explanation=msg)
+
+
     def add_simple_query_string_query(self):
         query = self._get_simple_query_string_query()
         if query:
@@ -1039,6 +1055,7 @@ class BasicSearchQueryFactory(AbstractQueryFactory):
 
     def build_query(self):
         self.validate_item_types()
+        self.validate_paging_constraints()
         self.add_simple_query_string_query()
         self.add_query_string_query()
         self.add_filters()

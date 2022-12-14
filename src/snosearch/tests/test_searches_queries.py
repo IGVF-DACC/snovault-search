@@ -677,6 +677,79 @@ def test_searches_queries_abstract_query_factory_validate_item_types(params_pars
 
 
 @pytest.mark.parametrize(
+    'params_parser, dummy_request',
+    [
+        ('pyramid', 'pyramid'),
+        ('flask', 'flask')
+    ],
+    indirect=True
+)
+def test_searches_queries_abstract_query_factory_validate_paging_constraints(params_parser, dummy_request, mocker):
+    from snosearch.queries import AbstractQueryFactory
+    from pyramid.exceptions import HTTPBadRequest
+    from snosearch.parsers import ParamsParser
+    mocker.patch.object(AbstractQueryFactory, '_get_index')
+    AbstractQueryFactory._get_index.return_value = 'snovault-resources'
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=10&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    aq.validate_paging_constraints()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&from=0'
+        '&limit=all&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    aq.validate_paging_constraints()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&from=1'
+        '&limit=all&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    with pytest.raises(HTTPBadRequest) as e:
+        aq.validate_paging_constraints()
+    assert str(e.value) == 'Invalid to specify from=1 and limit=all'
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&from=1000'
+        '&limit=all&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    with pytest.raises(HTTPBadRequest) as e:
+        aq.validate_paging_constraints()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&from=1000'
+        '&limit=100&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq.validate_paging_constraints()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=1001&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq.validate_paging_constraints()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&from=30'
+        '&limit=1000000&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    with pytest.raises(HTTPBadRequest) as e:
+        aq.validate_paging_constraints()
+    assert str(e.value) == 'Invalid to paginate when requesting more than 99999 results'
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&from=99998'
+        '&limit=1&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    with pytest.raises(HTTPBadRequest) as e:
+        aq.validate_paging_constraints()
+    assert str(e.value) == 'Paging depth 99999 exceeds max depth of 99999'
+
+
+@pytest.mark.parametrize(
     'params_parser_snovault_types',
     integrations,
     indirect=True
@@ -4917,6 +4990,66 @@ def test_searches_queries_basic_search_query_factory_build_query(dummy_request):
     integrations,
     indirect=True
 )
+def test_searches_queries_basic_search_query_factory_build_query_fails_paging_constraints(dummy_request):
+    from snosearch.queries import BasicSearchQueryFactory
+    from snosearch.parsers import ParamsParser
+    from pyramid.testing import DummyResource
+    from pyramid.exceptions import HTTPBadRequest
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=10&from=3'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    bsqf = BasicSearchQueryFactory(params_parser)
+    query = bsqf.build_query()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=all&from=3'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    bsqf = BasicSearchQueryFactory(params_parser)
+    with pytest.raises(HTTPBadRequest):
+        query = bsqf.build_query()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=10000&from=1000000'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    bsqf = BasicSearchQueryFactory(params_parser)
+    with pytest.raises(HTTPBadRequest):
+        query = bsqf.build_query()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=1000000&from=1'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    bsqf = BasicSearchQueryFactory(params_parser)
+    with pytest.raises(HTTPBadRequest):
+        query = bsqf.build_query()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=all&from=0'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    bsqf = BasicSearchQueryFactory(params_parser)
+    query = bsqf.build_query()
+
+
+@pytest.mark.parametrize(
+    'dummy_request',
+    integrations,
+    indirect=True
+)
 def test_searches_queries_basic_search_query_factory_build_query_with_ranges(dummy_request):
     from snosearch.queries import BasicSearchQueryFactory
     from snosearch.parsers import ParamsParser
@@ -5497,6 +5630,46 @@ def test_searches_queries_basic_report_query_factory_with_facets_build_query(dum
         {'embedded.label': {'order': 'desc', 'unmapped_type': 'keyword'}},
         {'embedded.uuid': {'order': 'desc', 'unmapped_type': 'keyword'}}
     ]
+
+@pytest.mark.parametrize(
+    'dummy_request',
+    integrations,
+    indirect=True
+)
+def test_searches_queries_basic_report_query_factory_build_query_fails_paging_constraints(dummy_request):
+    from snosearch.queries import BasicReportQueryFactoryWithFacets
+    from snosearch.parsers import ParamsParser
+    from pyramid.testing import DummyResource
+    from pyramid.exceptions import HTTPBadRequest
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=10&from=3'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicReportQueryFactoryWithFacets(params_parser)
+    query = brqf.build_query()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=all&from=3'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicReportQueryFactoryWithFacets(params_parser)
+    with pytest.raises(HTTPBadRequest):
+        query = brqf.build_query()
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&limit=50000&from=85000'
+    )
+    dummy_request.context = DummyResource()
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicReportQueryFactoryWithFacets(params_parser)
+    with pytest.raises(HTTPBadRequest):
+        query = brqf.build_query()
 
 
 @pytest.mark.parametrize(
