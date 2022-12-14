@@ -911,6 +911,7 @@ class AbstractQueryFactory:
     def validate_paging_constraints(self):
         from_value_as_int = self._get_from_value_as_int()
         limit_value_as_int = self._get_limit_value_as_int()
+        paging_depth = from_value_as_int + limit_value_as_int
         max_result_window = self._get_max_result_window()
         if self._limit_is_all() and from_value_as_int != 0:
             msg = f'Invalid to specify from={from_value_as_int} and limit=all'
@@ -918,7 +919,6 @@ class AbstractQueryFactory:
         if self._should_scan_over_results() and from_value_as_int != 0:
             msg = f'Invalid to paginate when requesting more than {max_result_window} results'
             raise get_default_exception()(explanation=msg)
-        paging_depth = from_value_as_int + limit_value_as_int
         if paging_depth >= max_result_window:
             msg = f'Paging depth {paging_depth} exceeds max depth of {max_result_window}'
             raise get_default_exception()(explanation=msg)
@@ -1047,7 +1047,7 @@ class BasicSearchQueryFactory(AbstractQueryFactory):
 
     def add_slice(self):
         '''
-        Report frontend passes from and size parameters to paginate.
+        Frontend passes from and limit parameters to paginate.
         '''
         start = self._get_from_value_as_int()
         end = self._get_bounded_limit_value_or_default()
