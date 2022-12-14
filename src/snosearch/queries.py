@@ -919,7 +919,7 @@ class AbstractQueryFactory:
         if self._should_scan_over_results() and from_value_as_int != 0:
             msg = f'Invalid to paginate when requesting more than {max_result_window} results'
             raise get_default_exception()(explanation=msg)
-        if paging_depth >= max_result_window:
+        if paging_depth >= max_result_window and from_value_as_int !=0:
             msg = f'Paging depth {paging_depth} exceeds max depth of {max_result_window}'
             raise get_default_exception()(explanation=msg)
 

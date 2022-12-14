@@ -747,6 +747,12 @@ def test_searches_queries_abstract_query_factory_validate_paging_constraints(par
     with pytest.raises(HTTPBadRequest) as e:
         aq.validate_paging_constraints()
     assert str(e.value) == 'Paging depth 99999 exceeds max depth of 99999'
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=10000000&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq.validate_paging_constraints()
 
 
 @pytest.mark.parametrize(
