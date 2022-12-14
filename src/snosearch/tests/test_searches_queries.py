@@ -1562,13 +1562,13 @@ def test_searches_queries_abstract_query_factory_get_max_result_window(params_pa
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser)
     max_result_window = aq._get_max_result_window()
-    assert max_result_window == 9999
+    assert max_result_window == 99999
     aq = AbstractQueryFactory(
         params_parser,
-        max_result_window=99999,
+        max_result_window=89999,
     )
     max_result_window = aq._get_max_result_window()
-    assert max_result_window == 99999
+    assert max_result_window == 89999
 
 
 
@@ -4513,6 +4513,13 @@ def test_searches_queries_abstract_query_factory_add_slice(params_parser, dummy_
     assert aq.search.to_dict() == {'from': 0, 'size': 25}
     dummy_request.environ['QUERY_STRING'] = (
         'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=10000'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    aq.add_slice()
+    assert aq.search.to_dict() == {'from': 0, 'size': 10000}
+    dummy_request.environ['QUERY_STRING'] = (
+        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=100000'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
