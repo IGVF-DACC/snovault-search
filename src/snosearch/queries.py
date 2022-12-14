@@ -1029,6 +1029,14 @@ class BasicSearchQueryFactory(AbstractQueryFactory):
     def __init__(self, params_parser, *args, **kwargs):
         super().__init__(params_parser, *args, **kwargs)
 
+    def add_slice(self):
+        '''
+        Report frontend passes from and size parameters to paginate.
+        '''
+        start = self._get_from_value_as_int()
+        end = self._get_bounded_limit_value_or_default()
+        self.search = self._get_or_create_search()[start:start + end]
+
     def build_query(self):
         self.validate_item_types()
         self.add_simple_query_string_query()
@@ -1120,14 +1128,6 @@ class BasicReportQueryFactory(BasicSearchQueryFactory):
                 params=self._get_item_types()
             )
         )
-
-    def add_slice(self):
-        '''
-        Report frontend passes from and size parameters to paginate.
-        '''
-        start = self._get_from_value_as_int()
-        end = self._get_bounded_limit_value_or_default()
-        self.search = self._get_or_create_search()[start:start + end]
 
     def build_query(self):
         self.validate_item_types()

@@ -4763,8 +4763,6 @@ def test_searches_queries_basic_search_query_factory_add_aggregations_and_aggreg
     )
 
 
-
-
 def test_searches_queries_abstract_query_factory_build_query():
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory({})
@@ -4782,6 +4780,86 @@ def test_searches_queries_basic_search_query_factory_init(params_parser):
     bsqf = BasicSearchQueryFactory(params_parser)
     assert isinstance(bsqf, BasicSearchQueryFactory)
     assert bsqf.params_parser == params_parser
+
+
+@pytest.mark.parametrize(
+    'dummy_request',
+    integrations,
+    indirect=True
+)
+def test_searches_queries_basic_search_query_factory_add_slice(dummy_request):
+    from snosearch.queries import BasicSearchQueryFactory
+    from snosearch.parsers import ParamsParser
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=10&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicSearchQueryFactory(params_parser)
+    brqf.add_slice()
+    q = brqf.search.to_dict()
+    assert q['from'] == 0
+    assert q['size'] == 10
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=100&from=25&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicSearchQueryFactory(params_parser)
+    brqf.add_slice()
+    q = brqf.search.to_dict()
+    assert q['from'] == 25
+    assert q['size'] == 100
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=all&from=25&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicSearchQueryFactory(params_parser)
+    brqf.add_slice()
+    q = brqf.search.to_dict()
+    assert q['from'] == 25
+    assert q['size'] == 0
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&from=25&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicSearchQueryFactory(params_parser)
+    brqf.add_slice()
+    q = brqf.search.to_dict()
+    assert q['from'] == 25
+    assert q['size'] == 25
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicSearchQueryFactory(params_parser)
+    brqf.add_slice()
+    q = brqf.search.to_dict()
+    assert q['from'] == 0
+    assert q['size'] == 25
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=9999&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicSearchQueryFactory(params_parser)
+    brqf.add_slice()
+    q = brqf.search.to_dict()
+    assert q['from'] == 0
+    assert q['size'] == 9999
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&status=released'
+        '&limit=100000&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = BasicSearchQueryFactory(params_parser)
+    brqf.add_slice()
+    q = brqf.search.to_dict()
+    assert q['from'] == 0
+    assert q['size'] == 0
 
 
 @pytest.mark.parametrize(
