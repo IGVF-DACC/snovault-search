@@ -1050,8 +1050,9 @@ class BasicSearchQueryFactory(AbstractQueryFactory):
         Frontend passes from and limit parameters to paginate.
         '''
         start = self._get_from_value_as_int()
-        end = self._get_bounded_limit_value_or_default()
-        self.search = self._get_or_create_search()[start:start + end]
+        slice_size = self._get_bounded_limit_value_or_default()
+        end = start + slice_size
+        self.search = self._get_or_create_search()[start:end]
 
     def build_query(self):
         self.validate_item_types()
