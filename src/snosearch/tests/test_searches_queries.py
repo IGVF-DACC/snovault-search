@@ -740,13 +740,13 @@ def test_searches_queries_abstract_query_factory_validate_paging_constraints(par
         aq.validate_paging_constraints()
     assert str(e.value) == 'Invalid to paginate when requesting more than 99999 results'
     dummy_request.environ['QUERY_STRING'] = (
-        'type=TestingSearchSchema&status=released&from=99998'
+        'type=TestingSearchSchema&status=released&from=99999'
         '&limit=1&field=@id&field=accession&mode=picker'
     )
     params_parser = ParamsParser(dummy_request)
     with pytest.raises(HTTPBadRequest) as e:
         aq.validate_paging_constraints()
-    assert str(e.value) == 'Paging depth 99999 exceeds max depth of 99999'
+    assert str(e.value) == 'Paging depth 100000 exceeds max depth of 99999'
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released'
         '&limit=10000000&field=@id&field=accession&mode=picker'
