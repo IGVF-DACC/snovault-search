@@ -504,6 +504,7 @@ def test_searches_queries_abstract_query_factory_get_columns_from_configs_or_ite
     from snosearch.queries import AbstractQueryFactory
     from snosearch.interfaces import SEARCH_CONFIG
     search_registry = dummy_request.registry[SEARCH_CONFIG]
+    print("search_registry:", search_registry.as_dict())
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&type=TestingSearchSchema'
     )
@@ -548,6 +549,19 @@ def test_searches_queries_abstract_query_factory_get_columns_from_configs_or_ite
         '@id': {'title': 'ID'},
         'accession': {'title': 'Accession'},
         'status': {'title': 'Status'}
+    }
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&type=TestingDownload'
+        '&type=TestingSearchSchema'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    columns = aq._get_columns_from_configs_or_item_types()
+    assert dict(columns) == {
+        '@id': {'title': 'ID'},
+        'accession': {'title': 'Accession'},
+        'status': {'title': 'Status'},
+        'attachment': {'title': 'Attachment'}
     }
     defaults = {
         ('TestingPostPutPatch', 'TestingSearchSchema'): ['TestingDownload']
