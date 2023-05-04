@@ -251,7 +251,7 @@ class AbstractQueryFactory:
 
     def _get_columns_for_item_type(self, item_type):
         return self._get_search_config_for_item_type(item_type).get(COLUMNS, {})
-    
+
     def _get_columns_for_item_types(self, item_types=None):
         columns = self._get_base_columns()
         item_type_values = item_types or self.params_parser.param_values_to_list(

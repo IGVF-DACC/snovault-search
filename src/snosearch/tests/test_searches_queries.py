@@ -504,7 +504,6 @@ def test_searches_queries_abstract_query_factory_get_columns_from_configs_or_ite
     from snosearch.queries import AbstractQueryFactory
     from snosearch.interfaces import SEARCH_CONFIG
     search_registry = dummy_request.registry[SEARCH_CONFIG]
-    print("search_registry:", search_registry.as_dict())
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&type=TestingSearchSchema'
     )
