@@ -120,7 +120,7 @@ def test_searches_queries_abstract_query_factory_get_index_variations(dummy_requ
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
-    assert aq._get_index() == ['testing_search_schema', 'testing_post_put_patch']
+    assert set(aq._get_index()) == {'testing_search_schema', 'testing_post_put_patch'}
     dummy_request.environ['QUERY_STRING'] = (
         'type=Item&status=released'
         '&limit=10&field=@id&field=accession'
@@ -394,10 +394,10 @@ def test_searches_queries_abstract_query_factory_get_name_for_item_type(params_p
     integrations,
     indirect=True
 )
-def test_searches_queries_abstract_query_factory_get_collection_name_for_item_type(params_parser_snovault_types):
+def test_searches_queries_abstract_query_factory_get_collection_names_for_item_type(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser_snovault_types)
-    assert aq._get_collection_name_for_item_type('TestingSearchSchema') == 'testing_search_schema'
+    assert aq._get_collection_names_for_item_type('TestingSearchSchema') == ['testing_search_schema']
 
 
 @pytest.mark.parametrize(
@@ -504,6 +504,7 @@ def test_searches_queries_abstract_query_factory_get_columns_from_configs_or_ite
     from snosearch.queries import AbstractQueryFactory
     from snosearch.interfaces import SEARCH_CONFIG
     search_registry = dummy_request.registry[SEARCH_CONFIG]
+
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&type=TestingSearchSchema'
     )
@@ -792,15 +793,16 @@ def test_searches_queries_abstract_query_factory_normalize_item_types(params_par
 def test_searches_queries_abstract_query_factory_get_collection_names_for_item_types(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser_snovault_types)
+    types = aq._get_registered_types()
     assert aq._get_collection_names_for_item_types(['TestingSearchSchema']) == ['testing_search_schema']
     assert aq._get_collection_names_for_item_types(['Item']) == []
-    assert aq._get_collection_names_for_item_types(
+    assert set(aq._get_collection_names_for_item_types(
         [
             'TestingSearchSchema',
             'Item',
             'TestingPostPutPatch'
         ]
-    ) == ['testing_search_schema', 'testing_post_put_patch']
+    ))== {'testing_search_schema', 'testing_post_put_patch'}
 
 
 @pytest.mark.parametrize(
@@ -7012,3 +7014,37 @@ def test_searches_queries_top_hits_query_factory_add_filtered_top_hits_aggregati
         }
     }
     assert actual == expected
+
+def test_searches_queries_abstract_query_factory_get_index_abstract_type(dummy_request):
+    from snosearch.parsers import ParamsParser
+    from snosearch.queries import AbstractQueryFactory
+    from snosearch.interfaces import SEARCH_CONFIG, ITEM, TYPE_KEY
+
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&type=TestingAbstractType'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert set(aq._get_index()) == {'testing_search_schema', 'testing_post_put_patch'}
+
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&type=TestingAbstractType&type=TestingSearchSchemaSpecialFacets'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert set(aq._get_index()) == {'testing_search_schema', 'testing_post_put_patch', 'testing_search_schema_special_facets'}
+
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&type=TestingAbstractType&type=TestingSearchSchema'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert set(aq._get_index()) == {'testing_search_schema', 'testing_post_put_patch'}
+
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&type=TestingAbstractType&type=WrongType'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert set(aq._get_index()) == {'testing_search_schema', 'testing_post_put_patch'}
+

@@ -160,12 +160,27 @@ class AbstractQueryFactory:
     def _get_name_for_item_type(self, item_type):
         return self._get_registered_types()[item_type].name
 
-    def _get_collection_name_for_item_type(self, item_type):
-        return getattr(
-            self._get_registered_types()[item_type],
-            COLLECTION_NAME,
-            None
-        )
+    def _get_collection_names_for_item_type(self, item_type):
+        def get_collection_names(subtypes):
+            if len(subtypes) == 1 and len(self._get_registered_types()[subtypes[0]].subtypes) == 1:
+                return [self._get_registered_types()[subtypes[0]].item_type]
+            elif len(subtypes) == 1:
+                return get_collection_names(self._get_registered_types()[subtypes[0].subtypes])
+            else:
+                item = self._get_registered_types()[subtypes[0]]
+                if len(item.subtypes) == 1:
+                    return [item.item_type] + get_collection_names(subtypes[1:])
+                else:
+                    subtypes = subtypes[1:] + item.subtypes
+                    return get_collection_names(subtypes)
+        if item_type not in self._get_registered_types() or item_type == "Item":
+            return []
+        item = self._get_registered_types()[item_type]
+        if len(item.subtypes) == 1:
+            return [item.item_type]
+        else:
+            return get_collection_names(item.subtypes)
+        
 
     def _get_properties_for_item_type(self, item_type):
         return self._get_schema_for_item_type(item_type).get(PROPERTIES, {})
@@ -290,13 +305,14 @@ class AbstractQueryFactory:
             self._get_name_for_item_type(item_type)
             for item_type in item_types
         ]
-
+   
     def _get_collection_names_for_item_types(self, item_types):
-        return [
-            self._get_collection_name_for_item_type(item_type)
-            for item_type in item_types
-            if self._get_collection_name_for_item_type(item_type)
-        ]
+        collection_names = []
+        for item_type in item_types:
+            collection_names.extend(self._get_collection_names_for_item_type(item_type))
+
+        return list(set(collection_names))
+
 
     def _escape_regex_slashes(self, query):
         return query.replace('/', '\\/')
