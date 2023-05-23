@@ -504,7 +504,6 @@ def test_searches_queries_abstract_query_factory_get_columns_from_configs_or_ite
     from snosearch.queries import AbstractQueryFactory
     from snosearch.interfaces import SEARCH_CONFIG
     search_registry = dummy_request.registry[SEARCH_CONFIG]
-
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&type=TestingSearchSchema'
     )
@@ -793,7 +792,6 @@ def test_searches_queries_abstract_query_factory_normalize_item_types(params_par
 def test_searches_queries_abstract_query_factory_get_collection_names_for_item_types(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser_snovault_types)
-    types = aq._get_registered_types()
     assert aq._get_collection_names_for_item_types(['TestingSearchSchema']) == ['testing_search_schema']
     assert aq._get_collection_names_for_item_types(['Item']) == []
     assert set(aq._get_collection_names_for_item_types(

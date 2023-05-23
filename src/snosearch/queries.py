@@ -176,7 +176,7 @@ class AbstractQueryFactory:
         if item_type not in self._get_registered_types() or item_type == "Item":
             return []
         item = self._get_registered_types()[item_type]
-        if len(item.subtypes) == 1:
+        if item.item_type:
             return [item.item_type]
         else:
             return get_collection_names(item.subtypes)
@@ -305,7 +305,7 @@ class AbstractQueryFactory:
             self._get_name_for_item_type(item_type)
             for item_type in item_types
         ]
-   
+
     def _get_collection_names_for_item_types(self, item_types):
         collection_names = []
         for item_type in item_types:
