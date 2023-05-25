@@ -6923,6 +6923,12 @@ def test_searches_queries_top_hits_query_factory_make_top_hits_aggregation(param
         }
     }
 
+
+@pytest.mark.parametrize(
+    'params_parser',
+    integrations,
+    indirect=True
+)
 def test_searches_queries_top_hits_query_factory_make_top_hits_by_type_aggregation(params_parser):
     from snosearch.queries import TopHitsQueryFactory
     th = TopHitsQueryFactory(params_parser)
