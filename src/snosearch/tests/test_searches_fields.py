@@ -881,6 +881,16 @@ def test_searches_fields_collection_clear_filter_response_field_get_path_qs_with
 )
 def test_searches_fields_debug_query_response_field(dummy_parent, mocker):
     from snosearch.queries import AbstractQueryFactory
+    from snosearch.fields import DebugQueryResponseField
+
+    dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&type=TestingPostPutPatch&debug=true'
+    )
+    dummy_parent._meta['query_builder'].add_post_filters()
+    dbr = DebugQueryResponseField()
+    r = dbr.render(parent=dummy_parent)
+    assert r['debug']['specified_indices'] == ['testing_post_put_patch', 'testing_search_schema']
+
     mocker.patch.object(AbstractQueryFactory, '_get_index')
     AbstractQueryFactory._get_index.return_value = 'snovault-resources'
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
@@ -888,10 +898,10 @@ def test_searches_fields_debug_query_response_field(dummy_parent, mocker):
         '&limit=all&frame=embedded&restricted!=*&debug=true'
     )
     dummy_parent._meta['query_builder'].add_post_filters()
-    from snosearch.fields import DebugQueryResponseField
     dbr = DebugQueryResponseField()
     r = dbr.render(parent=dummy_parent)
     assert 'post_filter' in r['debug']['raw_query']
+
 
 
 @pytest.mark.parametrize(

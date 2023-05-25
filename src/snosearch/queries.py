@@ -119,8 +119,10 @@ class AbstractQueryFactory:
         if self._should_search_over_all_indices():
             return [RESOURCES_INDEX]
         return self._get_collection_names_for_item_types(
-            self.params_parser.param_values_to_list(
-                params=self._get_item_types()
+            self._resolve_abstract_types_to_subtypes(
+                self.params_parser.param_values_to_list(
+                    params=self._get_item_types()
+                )
             )
             or self.params_parser.param_values_to_list(
                 params=self._get_default_item_types()
@@ -160,27 +162,12 @@ class AbstractQueryFactory:
     def _get_name_for_item_type(self, item_type):
         return self._get_registered_types()[item_type].name
 
-    def _get_collection_names_for_item_type(self, item_type):
-        def get_collection_names(subtypes):
-            if len(subtypes) == 1 and len(self._get_registered_types()[subtypes[0]].subtypes) == 1:
-                return [self._get_registered_types()[subtypes[0]].item_type]
-            elif len(subtypes) == 1:
-                return get_collection_names(self._get_registered_types()[subtypes[0].subtypes])
-            else:
-                item = self._get_registered_types()[subtypes[0]]
-                if len(item.subtypes) == 1:
-                    return [item.item_type] + get_collection_names(subtypes[1:])
-                else:
-                    subtypes = subtypes[1:] + item.subtypes
-                    return get_collection_names(subtypes)
-        if item_type not in self._get_registered_types() or item_type == "Item":
-            return []
-        item = self._get_registered_types()[item_type]
-        if item.item_type:
-            return [item.item_type]
-        else:
-            return get_collection_names(item.subtypes)
-        
+    def _get_collection_name_for_item_type(self, item_type):
+        return getattr(
+            self._get_registered_types()[item_type],
+            COLLECTION_NAME,
+            None
+        )
 
     def _get_properties_for_item_type(self, item_type):
         return self._get_schema_for_item_type(item_type).get(PROPERTIES, {})
@@ -307,12 +294,11 @@ class AbstractQueryFactory:
         ]
 
     def _get_collection_names_for_item_types(self, item_types):
-        collection_names = []
-        for item_type in item_types:
-            collection_names.extend(self._get_collection_names_for_item_type(item_type))
-
-        return list(set(collection_names))
-
+        return [
+            self._get_collection_name_for_item_type(item_type)
+            for item_type in item_types
+            if self._get_collection_name_for_item_type(item_type)
+        ]
 
     def _escape_regex_slashes(self, query):
         return query.replace('/', '\\/')
@@ -915,6 +901,12 @@ class AbstractQueryFactory:
                 field=field
             )
         )
+
+    def _resolve_abstract_types_to_subtypes(self, item_types):
+        subtypes = set()
+        for item_type in item_types:
+            subtypes.update(self._get_subtypes_for_item_type(item_type))
+        return list(sorted(subtypes))     
 
     @assert_none_returned(error_message='Invalid types:')
     def validate_item_types(self, item_types=[]):
