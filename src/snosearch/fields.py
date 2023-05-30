@@ -25,7 +25,7 @@ from .interfaces import REMOVE
 from .interfaces import SEARCH_BASE
 from .interfaces import SEARCH_PATH
 from .interfaces import SORT_KEY
-from .interfaces import SPECIFIED_INDICES
+from .interfaces import SEARCH_INDICES
 from .interfaces import SUCCESS
 from .interfaces import TERM
 from .interfaces import TITLE
@@ -575,16 +575,12 @@ class DebugQueryResponseField(ResponseField):
         Returns constructed query in debug field if debug param specified.
         '''
         self.parent = kwargs.get('parent')
-        self.query_builder = AbstractQueryFactory(
-            params_parser=self.get_params_parser(),
-            **self.kwargs
-        )
         if self.get_params_parser().get_debug():
             self.response.update(
                 {
                     DEBUG_KEY: {
                         RAW_QUERY: self.get_query_builder().search.to_dict(),
-                        SPECIFIED_INDICES: self.query_builder._get_index()
+                        SEARCH_INDICES: self.get_query_builder().search._index
                     }
                 }
             )

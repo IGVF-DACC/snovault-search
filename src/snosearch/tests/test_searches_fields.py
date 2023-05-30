@@ -889,7 +889,7 @@ def test_searches_fields_debug_query_response_field(dummy_parent, mocker):
     dummy_parent._meta['query_builder'].add_post_filters()
     dbr = DebugQueryResponseField()
     r = dbr.render(parent=dummy_parent)
-    assert r['debug']['specified_indices'] == ['testing_post_put_patch', 'testing_search_schema']
+    assert r['debug']['search_indices'] == ['testing_post_put_patch', 'testing_search_schema']
 
     mocker.patch.object(AbstractQueryFactory, '_get_index')
     AbstractQueryFactory._get_index.return_value = 'snovault-resources'
