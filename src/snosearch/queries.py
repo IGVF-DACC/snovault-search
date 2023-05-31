@@ -598,8 +598,8 @@ class AbstractQueryFactory:
         ]
 
     def _combine_search_term_queries(self, must_match_filters=[], must_not_match_filters=[]):
-        must = AND_JOIN.join(['({})'.format(q[1]) for q in must_match_filters])
-        must_not = AND_NOT_JOIN.join(['({})'.format(q[1]) for q in must_not_match_filters])
+        must = AND_JOIN.join(['{}'.format(q[1]) for q in must_match_filters])
+        must_not = AND_NOT_JOIN.join(['{}'.format(q[1]) for q in must_not_match_filters])
         if must and must_not:
             return must + AND_NOT_JOIN + must_not
         elif must:

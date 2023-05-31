@@ -817,8 +817,8 @@ def test_searches_queries_abstract_query_factory_escape_regex_slashes(params_par
         '@type:Experiment date_created:[01-01-2018 TO 01-02-2018]'
     ) == '@type:Experiment date_created:[01-01-2018 TO 01-02-2018]'
     assert aq._escape_regex_slashes(
-        '(ctcf) AND (myers) AND NOT (snyder or pacha) AND (@type:File)'
-    ) == '(ctcf) AND (myers) AND NOT (snyder or pacha) AND (@type:File)'
+        'ctcf AND myers AND NOT snyder or pacha AND @type:File'
+    ) == 'ctcf AND myers AND NOT snyder or pacha AND @type:File'
     assert aq._escape_regex_slashes(
         'Wnt/β-catenin'
     ) == 'Wnt\\/β-catenin'
@@ -841,8 +841,8 @@ def test_searches_queries_abstract_query_factory_escape_fuzzy_tilde(params_parse
         '@type:Experiment date_created:[01-01-2018 TO 01-02-2018]'
     ) == '@type:Experiment date_created:[01-01-2018 TO 01-02-2018]'
     assert aq._escape_fuzzy_tilde(
-        '(ctcf) AND (myers)~ AND NOT (~snyder or pacha) AND (@type:File)'
-    ) == '(ctcf) AND (myers)\\~ AND NOT (\\~snyder or pacha) AND (@type:File)'
+        'ctcf AND myers~ AND NOT ~snyder or pacha AND @type:File'
+    ) == 'ctcf AND myers\\~ AND NOT \\~snyder or pacha AND @type:File'
     assert aq._escape_fuzzy_tilde(
         'Wnt/β-~catenin'
     ) == 'Wnt/β-\\~catenin'
@@ -865,8 +865,8 @@ def test_searches_queries_abstract_query_factory_escape_boost_caret(params_parse
         'eclip^'
     ) == 'eclip\\^'
     assert aq._escape_boost_caret(
-        '(ctcf) AND (my^ers)^'
-    ) == '(ctcf) AND (my\\^ers)\\^'
+        'ctcf AND my^ers^'
+    ) == 'ctcf AND my\\^ers\\^'
     assert aq._escape_boost_caret(
         '^^Wnt/β-catenin'
     ) == '\\^\\^Wnt/β-catenin'
@@ -889,8 +889,8 @@ def test_searches_queries_abstract_query_factory_escape_reserved_query_string_ch
         '@type:Experiment date_created:[01-01-2018 TO 01-02-2018]'
     ) == '@type:Experiment date_created:[01-01-2018 TO 01-02-2018]'
     assert aq._escape_reserved_query_string_characters(
-        '(ctcf) AND (myers) AND NOT (snyder or pacha) AND (@type:File)'
-    ) == '(ctcf) AND (myers) AND NOT (snyder or pacha) AND (@type:File)'
+        'ctcf AND myers AND NOT snyder or pacha AND @type:File'
+    ) == 'ctcf AND myers AND NOT snyder or pacha AND @type:File'
     assert aq._escape_reserved_query_string_characters(
         'Wnt/β-catenin'
     ) == 'Wnt\\/β-catenin'
@@ -898,8 +898,8 @@ def test_searches_queries_abstract_query_factory_escape_reserved_query_string_ch
         '/targets/H3K9me3-human/'
     ) == '\\/targets\\/H3K9me3-human\\/'
     assert aq._escape_reserved_query_string_characters(
-        '(ctcf)~ AND (myers) AND NOT^ (snyder or pacha) AND (@type:File)'
-    ) == '(ctcf)\\~ AND (myers) AND NOT\\^ (snyder or pacha) AND (@type:File)'
+        'ctcf~ AND myers AND NOT^ snyder or pacha AND @type:File'
+    ) == 'ctcf\\~ AND myers AND NOT\\^ snyder or pacha AND @type:File'
     assert aq._escape_reserved_query_string_characters(
         '^Wnt/β-catenin~~'
     ) == '\\^Wnt\\/β-catenin\\~\\~'
@@ -1116,20 +1116,20 @@ def test_searches_queries_abstract_query_factory_get_query_string_query(params_p
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
-    assert aq._get_query_string_query() == '(cherry)'
+    assert aq._get_query_string_query() == 'cherry'
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&advancedQuery=cherry'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
-    assert aq._get_query_string_query() == '(cherry)'
+    assert aq._get_query_string_query() == 'cherry'
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&advancedQuery=@type:Experiment date_created:[01-01-2018 TO 01-02-2018'
         '&searchTerm=ctcf'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
-    assert aq._get_query_string_query() == '(@type:Experiment date_created:[01-01-2018 TO 01-02-2018)'
+    assert aq._get_query_string_query() == '@type:Experiment date_created:[01-01-2018 TO 01-02-2018'
 
 
 @pytest.mark.parametrize(
@@ -1145,7 +1145,7 @@ def test_searches_queries_abstract_query_factory_get_simple_query_string_query(p
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser)
     search_terms = aq._get_simple_query_string_query()
-    assert search_terms == '(chip-seq)'
+    assert search_terms == 'chip-seq'
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&frame=object&mode=picker'
     )
@@ -1157,7 +1157,7 @@ def test_searches_queries_abstract_query_factory_get_simple_query_string_query(p
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
-    assert aq._get_simple_query_string_query() == '(cherry)'
+    assert aq._get_simple_query_string_query() == 'cherry'
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&advancedQuery=cherry'
     )
@@ -1170,7 +1170,7 @@ def test_searches_queries_abstract_query_factory_get_simple_query_string_query(p
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
-    assert aq._get_simple_query_string_query() == '(ctcf)'
+    assert aq._get_simple_query_string_query() == 'ctcf'
 
 
 @pytest.mark.parametrize(
@@ -2110,7 +2110,7 @@ def test_searches_queries_abstract_query_factory_combine_search_term_queries(dum
         must_match_filters=aq.params_parser.get_must_match_search_term_filters(),
         must_not_match_filters=aq.params_parser.get_must_not_match_search_term_filters()
     )
-    assert combined_search_terms == '(chip-seq) AND (rna) AND NOT (ENCODE 2)'
+    assert combined_search_terms == 'chip-seq AND rna AND NOT ENCODE 2'
     dummy_request.environ['QUERY_STRING'] = (
         'searchTerm=chip-seq'
     )
@@ -2120,7 +2120,7 @@ def test_searches_queries_abstract_query_factory_combine_search_term_queries(dum
         must_match_filters=aq.params_parser.get_must_match_search_term_filters(),
         must_not_match_filters=aq.params_parser.get_must_not_match_search_term_filters()
     )
-    assert combined_search_terms == '(chip-seq)'
+    assert combined_search_terms == 'chip-seq'
     dummy_request.environ['QUERY_STRING'] = (
         'searchTerm!=rna&searchTerm!=ENCODE+2'
     )
@@ -2130,7 +2130,7 @@ def test_searches_queries_abstract_query_factory_combine_search_term_queries(dum
         must_match_filters=aq.params_parser.get_must_match_search_term_filters(),
         must_not_match_filters=aq.params_parser.get_must_not_match_search_term_filters()
     )
-    assert combined_search_terms == 'NOT (rna) AND NOT (ENCODE 2)'
+    assert combined_search_terms == 'NOT rna AND NOT ENCODE 2'
     dummy_request.environ['QUERY_STRING'] = (
         'type=Experiment'
     )
@@ -3231,7 +3231,7 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query(d
                 'fields': [
                     '_all'
                 ],
-                'query': '(chip-seq)'
+                'query': 'chip-seq'
             }
         }
     }
@@ -3271,7 +3271,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
                 'fields': [
                     '_all'
                 ],
-                'query': '(chip-seq)'
+                'query': 'chip-seq'
             }
         }
     }
@@ -3301,7 +3301,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
                 'fields': [
                     '_all'
                 ],
-                'query': '(cherry\\^)'
+                'query': 'cherry\\^'
             }
         }
     }
@@ -3323,7 +3323,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
                 'fields': [
                     '_all'
                 ],
-                'query': '(cherry\\~)'
+                'query': 'cherry\\~'
             }
         }
     }
@@ -3345,7 +3345,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
                 'fields': [
                     '_all'
                 ],
-                'query': '(\\/cherry\\^\\~)'
+                'query': '\\/cherry\\^\\~'
             }
         }
     }
@@ -3377,14 +3377,14 @@ def test_searches_queries_abstract_query_factory_add_query_string_query_and_simp
                 'must': [
                     {
                         'query_string': {
-                            'query': '(embedded.date_released:[01-01-2018 TO 01-01-2019])',
+                            'query': 'embedded.date_released:[01-01-2018 TO 01-01-2019]',
                             'default_operator': 'AND',
                             'fields': ['_all']
                         }
                     },
                     {
                         'simple_query_string': {
-                            'query': '(chip-seq)',
+                            'query': 'chip-seq',
                             'default_operator': 'AND',
                             'fields': ['_all']
                         }
@@ -3442,7 +3442,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_query_with_typ
                 'fields': [
                     '_all'
                 ],
-                'query': '(chip-seq)'
+                'query': 'chip-seq'
             }
         }
     }
@@ -3482,7 +3482,7 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query_w
                 'fields': [
                     '_all'
                 ],
-                'query': '(chip-seq)'
+                'query': 'chip-seq'
             }
         }
     }
@@ -3527,7 +3527,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_query_with_def
                 'fields': [
                     '_all'
                 ],
-                'query': '(chip-seq)'
+                'query': 'chip-seq'
             }
         }
     }
@@ -3572,7 +3572,7 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query_w
                 'fields': [
                     '_all'
                 ],
-                'query': '(chip-seq)'
+                'query': 'chip-seq'
             }
         }
     }
@@ -4414,7 +4414,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_and_post_filte
     expected_query = {
         'query': {
             'simple_query_string': {
-                'query': '(chip-seq)',
+                'query': 'chip-seq',
                 'fields': [
                     '_all',
                     '*.uuid',
@@ -6733,7 +6733,7 @@ def test_searches_queries_top_hits_query_factory_build_query(dummy_request):
                 'must': [
                     {
                         'query_string': {
-                            'query': '(ep300)',
+                            'query': 'ep300',
                             'fields': ['_all'],
                             'default_operator': 'AND'
                         }
@@ -6860,7 +6860,7 @@ def test_searches_queries_top_hits_query_factory_build_query_with_filter(dummy_r
                     }
                 ],
                 'must': [
-                    {'query_string': {'fields': ['_all'], 'default_operator': 'AND', 'query': '(ep300)'}}
+                    {'query_string': {'fields': ['_all'], 'default_operator': 'AND', 'query': 'ep300'}}
                 ]
             }
         },
