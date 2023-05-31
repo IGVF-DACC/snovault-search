@@ -30,7 +30,6 @@ from .interfaces import SUCCESS
 from .interfaces import TERM
 from .interfaces import TITLE
 from .interfaces import TOTAL
-from .queries import AbstractQueryFactory
 from .queries import AuditMatrixQueryFactoryWithFacets
 from .queries import BasicMatrixQueryFactoryWithFacets
 from .queries import BasicSearchQueryFactory
