@@ -1236,7 +1236,8 @@ def test_searches_queries_abstract_query_factory_get_reserved_keys(params_parser
         'debug',
         'config',
         'searchTerm',
-        'advancedQuery'
+        'advancedQuery',
+        'query',
     ]
     filters = aq._get_filters()
     assert filters == [

@@ -27,6 +27,7 @@ OPTIONAL_PARAMS = [
 FREE_TEXT_QUERIES = [
     'searchTerm',
     'advancedQuery',
+    'query',
 ]
 
 NOT_FILTERS = OPTIONAL_PARAMS + FREE_TEXT_QUERIES

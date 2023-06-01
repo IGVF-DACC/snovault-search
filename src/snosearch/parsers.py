@@ -19,6 +19,7 @@ from .interfaces import NOT_FLAG
 from .interfaces import NOT_RANGES
 from .interfaces import RANGES
 from .interfaces import SEARCH_TERM_KEY
+from .interfaces import QUERY_KEY
 from .interfaces import SORT_KEY
 from .interfaces import TYPE_KEY
 from .interfaces import WILDCARD
@@ -258,6 +259,9 @@ class ParamsParser:
     def get_search_term_filters(self, params=None):
         return self.get_key_filters(
             key=SEARCH_TERM_KEY,
+            params=params
+        ) + self.get_key_filters(
+            key=QUERY_KEY,
             params=params
         )
 
