@@ -1950,7 +1950,10 @@ def test_searches_queries_abstract_query_factory_get_search_fields(params_parser
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser_snovault_types)
     search_fields = aq._get_search_fields()
-    assert search_fields == ['_all']
+    assert search_fields == [
+        '_fuzzy',
+        '_exact'
+    ]
     aq = AbstractQueryFactory(
         params_parser_snovault_types,
         search_fields=[
@@ -1984,7 +1987,8 @@ def test_searches_queries_abstract_query_factory_get_search_fields_mode_picker(d
     aq = AbstractQueryFactory(params_parser)
     search_fields = aq._get_search_fields()
     assert set(search_fields) == set([
-        '_all'
+        '_fuzzy',
+        '_exact'
     ])
 
 
@@ -3229,7 +3233,8 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query(d
             'simple_query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'chip-seq'
             }
@@ -3269,7 +3274,8 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
             'query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'chip-seq'
             }
@@ -3299,7 +3305,8 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
             'query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'cherry\\^'
             }
@@ -3321,7 +3328,8 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
             'query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'cherry\\~'
             }
@@ -3343,7 +3351,8 @@ def test_searches_queries_abstract_query_factory_add_query_string_query(dummy_re
             'query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': '\\/cherry\\^\\~'
             }
@@ -3379,14 +3388,14 @@ def test_searches_queries_abstract_query_factory_add_query_string_query_and_simp
                         'query_string': {
                             'query': 'embedded.date_released:[01-01-2018 TO 01-01-2019]',
                             'default_operator': 'AND',
-                            'fields': ['_all']
+                            'fields': ['_fuzzy', '_exact']
                         }
                     },
                     {
                         'simple_query_string': {
                             'query': 'chip-seq',
                             'default_operator': 'AND',
-                            'fields': ['_all']
+                            'fields': ['_fuzzy', '_exact']
                         }
                     }
                 ]
@@ -3440,7 +3449,8 @@ def test_searches_queries_abstract_query_factory_add_query_string_query_with_typ
             'query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'chip-seq'
             }
@@ -3480,7 +3490,8 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query_w
             'simple_query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'chip-seq'
             }
@@ -3525,7 +3536,8 @@ def test_searches_queries_abstract_query_factory_add_query_string_query_with_def
             'query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'chip-seq'
             }
@@ -3570,7 +3582,8 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query_w
             'simple_query_string': {
                 'default_operator': 'AND',
                 'fields': [
-                    '_all'
+                    '_fuzzy',
+                    '_exact'
                 ],
                 'query': 'chip-seq'
             }
@@ -6734,7 +6747,7 @@ def test_searches_queries_top_hits_query_factory_build_query(dummy_request):
                     {
                         'query_string': {
                             'query': 'ep300',
-                            'fields': ['_all'],
+                            'fields': ['_fuzzy', '_exact'],
                             'default_operator': 'AND'
                         }
                     }
@@ -6860,7 +6873,7 @@ def test_searches_queries_top_hits_query_factory_build_query_with_filter(dummy_r
                     }
                 ],
                 'must': [
-                    {'query_string': {'fields': ['_all'], 'default_operator': 'AND', 'query': 'ep300'}}
+                    {'query_string': {'fields': ['_fuzzy', '_exact'], 'default_operator': 'AND', 'query': 'ep300'}}
                 ]
             }
         },
