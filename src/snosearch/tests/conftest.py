@@ -424,6 +424,17 @@ def testing_item_type():
         ],
     }
 
+@pytest.fixture()
+def testing_abstract_type():
+    return {
+        'name': 'TestingAbstractType',
+        'schema': {},
+        'subtypes': [
+            'TestingSearchSchema',
+            'TestingPostPutPatch',
+        ],
+    }
+
 
 @pytest.fixture
 def test_config_item_search_config():
@@ -434,13 +445,14 @@ def test_config_item_search_config():
 
 
 @pytest.fixture
-def testing_types(testing_search_schema_type, testing_post_put_patch_type, testing_search_schema_special_facets_type, testing_download_type, testing_item_type):
+def testing_types(testing_search_schema_type, testing_post_put_patch_type, testing_search_schema_special_facets_type, testing_download_type, testing_item_type, testing_abstract_type):
     return [
         testing_search_schema_type,
         testing_post_put_patch_type,
         testing_search_schema_special_facets_type,
         testing_download_type,
         testing_item_type,
+        testing_abstract_type,
     ]
 
 

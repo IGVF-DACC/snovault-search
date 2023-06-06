@@ -119,8 +119,10 @@ class AbstractQueryFactory:
         if self._should_search_over_all_indices():
             return [RESOURCES_INDEX]
         return self._get_collection_names_for_item_types(
-            self.params_parser.param_values_to_list(
-                params=self._get_item_types()
+            self._resolve_abstract_types_to_subtypes(
+                self.params_parser.param_values_to_list(
+                    params=self._get_item_types()
+                )
             )
             or self.params_parser.param_values_to_list(
                 params=self._get_default_item_types()
@@ -899,6 +901,12 @@ class AbstractQueryFactory:
                 field=field
             )
         )
+
+    def _resolve_abstract_types_to_subtypes(self, item_types):
+        subtypes = set()
+        for item_type in item_types:
+            subtypes.update(self._get_subtypes_for_item_type(item_type))
+        return list(sorted(subtypes))     
 
     @assert_none_returned(error_message='Invalid types:')
     def validate_item_types(self, item_types=[]):

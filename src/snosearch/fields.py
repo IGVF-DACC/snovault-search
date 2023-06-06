@@ -25,6 +25,7 @@ from .interfaces import REMOVE
 from .interfaces import SEARCH_BASE
 from .interfaces import SEARCH_PATH
 from .interfaces import SORT_KEY
+from .interfaces import SEARCH_INDICES
 from .interfaces import SUCCESS
 from .interfaces import TERM
 from .interfaces import TITLE
@@ -577,7 +578,8 @@ class DebugQueryResponseField(ResponseField):
             self.response.update(
                 {
                     DEBUG_KEY: {
-                        RAW_QUERY: self.get_query_builder().search.to_dict()
+                        RAW_QUERY: self.get_query_builder().search.to_dict(),
+                        SEARCH_INDICES: self.get_query_builder().search._index
                     }
                 }
             )

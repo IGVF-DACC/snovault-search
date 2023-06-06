@@ -400,7 +400,8 @@ def test_searches_configs_search_config_registry_as_dict(dummy_request):
                 }
             }
         },
-        'Item': {}
+        'Item': {},
+        'TestingAbstractType': {}
     }
     actual = search_registry.as_dict()
     assert actual == expected
