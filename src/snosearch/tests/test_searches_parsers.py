@@ -208,6 +208,18 @@ def test_searches_parsers_params_parser_get_search_term_filters(dummy_request):
         ('searchTerm', 'my other experiment'),
         ('searchTerm!', 'whatever')
     ]
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=Experiment&type=File&field=status&type!=Item'
+        '&searchTerm=my+favorite+experiment&searchTerm=my+other+experiment'
+        '&searchTerm!=whatever&query=newQuery'
+    )
+    p = ParamsParser(dummy_request)
+    assert p.get_search_term_filters() == [
+        ('searchTerm', 'my favorite experiment'),
+        ('searchTerm', 'my other experiment'),
+        ('searchTerm!', 'whatever'),
+        ('query', 'newQuery'),
+    ]
 
 
 @pytest.mark.parametrize(

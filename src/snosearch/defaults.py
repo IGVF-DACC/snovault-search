@@ -27,12 +27,14 @@ OPTIONAL_PARAMS = [
 FREE_TEXT_QUERIES = [
     'searchTerm',
     'advancedQuery',
+    'query',
 ]
 
 NOT_FILTERS = OPTIONAL_PARAMS + FREE_TEXT_QUERIES
 
 BASE_SEARCH_FIELDS = [
-    '_all',
+    '_fuzzy',
+    '_exact',
 ]
 
 BASE_RETURN_FIELDS = [
