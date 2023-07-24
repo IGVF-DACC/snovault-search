@@ -5519,47 +5519,13 @@ def test_searches_queries_basic_report_query_factory_with_facets_get_item_types(
         ('type', 'Experiment')
     ]
     dummy_request.environ['QUERY_STRING'] = (
-        'type=TestingSearchSchema&type=Experiment&status=released'
-        '&limit=10&field=@id&field=accession&mode=picker'
-    )
-    params_parser = ParamsParser(dummy_request)
-    brqf = BasicReportQueryFactoryWithFacets(params_parser)
-    with pytest.raises(HTTPBadRequest):
-        brqf._get_item_types()
-    dummy_request.environ['QUERY_STRING'] = (
         'status=released'
         '&limit=10&field=@id&field=accession&mode=picker'
     )
     params_parser = ParamsParser(dummy_request)
     brqf = BasicReportQueryFactoryWithFacets(params_parser)
     with pytest.raises(HTTPBadRequest):
-        brqf._get_item_types()
-
-
-@pytest.mark.parametrize(
-    'dummy_request',
-    integrations,
-    indirect=True
-)
-def test_searches_queries_basic_report_query_factory_with_facets_validate_item_type_subtypes(dummy_request):
-    from snosearch.queries import BasicReportQueryFactoryWithFacets
-    from snosearch.parsers import ParamsParser
-    from pyramid.exceptions import HTTPBadRequest
-    dummy_request.environ['QUERY_STRING'] = (
-        'type=TestingSearchSchema&status=released'
-        '&limit=10&field=@id&field=accession&mode=picker'
-    )
-    params_parser = ParamsParser(dummy_request)
-    brqf = BasicReportQueryFactoryWithFacets(params_parser)
-    brqf.validate_item_type_subtypes()
-    dummy_request.environ['QUERY_STRING'] = (
-        'type=Item&status=released'
-        '&limit=10&field=@id&field=accession&mode=picker'
-    )
-    params_parser = ParamsParser(dummy_request)
-    brqf = BasicReportQueryFactoryWithFacets(params_parser)
-    with pytest.raises(HTTPBadRequest):
-        brqf.validate_item_type_subtypes()
+        brqf.validate_item_types()
 
 
 @pytest.mark.parametrize(

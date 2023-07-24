@@ -1143,21 +1143,13 @@ class BasicReportQueryFactory(BasicSearchQueryFactory):
     def __init__(self, params_parser, *args, **kwargs):
         super().__init__(params_parser, *args, **kwargs)
 
-    @assert_one_returned(error_message='Report view requires specifying a single type:')
+    @assert_something_returned(error_message='Report view requires specifying types:')
     def _get_item_types(self):
         return super()._get_item_types()
 
-    @assert_one_or_none_returned(error_message='Report view requires a type with no child types:')
-    def validate_item_type_subtypes(self):
-        return self._get_subtypes_for_item_type(
-            self.params_parser.get_one_value(
-                params=self._get_item_types()
-            )
-        )
-
     def build_query(self):
         self.validate_item_types()
-        self.validate_item_type_subtypes()
+        self._get_item_types()
         return super().build_query()
 
 
