@@ -1163,6 +1163,8 @@ class BasicReportQueryFactory(BasicSearchQueryFactory):
         if len(search_indices) > 1:
             is_logic_group = False
             item_registry = self._get_registered_types()
+            print(dir(item_registry))
+            print(item_registry.keys())
             for item_type in item_registry:
                 subtypes = item_registry[item_type].subtypes
                 if len(subtypes) == 1 or item_type == "Item":
