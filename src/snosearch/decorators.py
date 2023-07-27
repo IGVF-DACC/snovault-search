@@ -121,3 +121,10 @@ def conditional_cache(cache, condition, key):
             return result
         return wrapper
     return decorator
+
+
+def assert_no_item_type_returned(error_message):
+    return assert_condition_returned(
+        condition=lambda result: 'Item' in result,
+        error_message=error_message
+    )
