@@ -1146,10 +1146,46 @@ class BasicReportQueryFactory(BasicSearchQueryFactory):
     @assert_something_returned(error_message='Report view requires specifying types:')
     def _get_item_types(self):
         return super()._get_item_types()
+    
+    @assert_none_returned(error_message="Report view dosen't support type Item")
+    def _validate_item_in_types(self):
+        types = super()._get_item_types()
+        for key_value in types:
+            if key_value[1] == 'Item':
+                return types
+            else:
+                return None
+            
+    def _validate_report_types(self):
+        types = super()._get_item_types()
+        for key_value in types:
+            if key_value[1] == 'Item':
+                raise Exception("Report view doesn't support type Item")
+        search_indices = self._get_index()
+        if len(search_indices) > 1:
+            is_logic_group = False
+            item_registry = self._get_registered_types()
+            for name, item in item_registry.items():
+                subtypes = item.subtypes
+                if len(subtypes) == 1 or name == "Item":
+                    continue
+                is_logic_group = True
+                for index in search_indices:
+                    if index not in subtypes:
+                        is_logic_group = False
+                        break
+                if is_logic_group:
+                    break
+            if not is_logic_group:
+                raise Exception("The group of types for report view must belong to the same absract type.")
+        
+ 
+
 
     def build_query(self):
         self.validate_item_types()
         self._get_item_types()
+        self._validate_item_in_types()
         return super().build_query()
 
 
