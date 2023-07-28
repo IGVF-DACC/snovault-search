@@ -5525,25 +5525,7 @@ def test_searches_queries_basic_report_query_factory_with_facets_get_item_types(
     params_parser = ParamsParser(dummy_request)
     brqf = BasicReportQueryFactoryWithFacets(params_parser)
     with pytest.raises(HTTPBadRequest):
-        brqf.validate_item_types()
-
-    dummy_request.environ['QUERY_STRING'] = (
-        'status=released&type=Item&type=Experiment'
-        '&limit=10&field=@id&field=accession&mode=picker'
-    )
-    params_parser = ParamsParser(dummy_request)
-    brqf = BasicReportQueryFactoryWithFacets(params_parser)
-    with pytest.raises(HTTPBadRequest):
-        brqf._validate_report_type_item()
-
-    dummy_request.environ['QUERY_STRING'] = (
-        'status=released&type=TestingSearchSchemaSpecialFacets&type=TestingSearchSchema'
-        '&limit=10&field=@id&field=accession&mode=picker'
-    )
-    params_parser = ParamsParser(dummy_request)
-    brqf = BasicReportQueryFactoryWithFacets(params_parser)
-    with pytest.raises(HTTPBadRequest):
-        brqf._validate_report_types()
+        brqf._get_item_types()
 
 @pytest.mark.parametrize(
     'dummy_request',

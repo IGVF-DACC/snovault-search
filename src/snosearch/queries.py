@@ -15,7 +15,6 @@ from .decorators import assert_one_returned
 from .decorators import assert_one_or_none_returned
 from .decorators import assert_something_returned
 from .decorators import deduplicate
-from .decorators import assert_no_item_type_returned
 from .defaults import AUDIT_FIELDS
 from .defaults import BASE_AUDIT_FACETS
 from .defaults import BASE_COLUMNS
@@ -1148,45 +1147,9 @@ class BasicReportQueryFactory(BasicSearchQueryFactory):
     def _get_item_types(self):
         return super()._get_item_types()
     
-    @assert_no_item_type_returned(error_message="Report view dosn't support Item type:")
-    def _validate_report_type_item(self):
-        return self.params_parser.param_values_to_list(
-                params=self._get_item_types()
-            )
-
-    @assert_none_returned(error_message="Report view dosn't support this type or this group of types:")
-    def _validate_report_types(self):
-        types = self.params_parser.param_values_to_list(
-                params=self._get_item_types()
-            )
-        search_indices = self._get_index()
-        if len(search_indices) > 1:
-            is_logic_group = False
-            item_registry = self._get_registered_types()
-            print(dir(item_registry))
-            print(item_registry.keys())
-            for item_type in item_registry:
-                subtypes = item_registry[item_type].subtypes
-                if len(subtypes) == 1 or item_type == "Item":
-                    continue
-                is_logic_group = True
-                for index in search_indices:
-                    if index not in subtypes:
-                        is_logic_group = False
-                        break
-                if is_logic_group:
-                    break
-            if not is_logic_group:
-                return types
-        
- 
-
-
     def build_query(self):
         self.validate_item_types()
         self._get_item_types()
-        self._validate_report_type_item()
-        self._validate_report_types()
         return super().build_query()
 
 
