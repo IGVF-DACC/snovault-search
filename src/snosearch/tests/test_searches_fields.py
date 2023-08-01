@@ -336,6 +336,25 @@ def test_searches_fields_basic_report_with_facets_response_build_query(dummy_par
     assert isinstance(brf.query, Search)
     assert isinstance(brf.query_builder, BasicReportQueryFactoryWithFacets)
 
+@pytest.mark.parametrize(
+    'dummy_parent',
+    integrations,
+    indirect=True
+)
+def test_searches_fields_multiple_types_report_with_facets_response_build_query(dummy_parent):
+    from snosearch.fields import MultipleTypesReportWithFacetsResponseField
+    from snosearch.queries import MultipleTypesReportQueryFactoryWithFacets
+    from opensearch_dsl import Search
+    brf = MultipleTypesReportWithFacetsResponseField()
+    dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&assay_title=Histone+ChIP-seq&award.project=Roadmap'
+        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+    )
+    brf.parent = dummy_parent
+    brf._build_query()
+    assert isinstance(brf.query, Search)
+    assert isinstance(brf.query_builder, MultipleTypesReportQueryFactoryWithFacets)
+
 
 @pytest.mark.parametrize(
     'dummy_parent',

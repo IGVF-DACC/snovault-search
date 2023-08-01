@@ -40,6 +40,7 @@ from .queries import BasicReportQueryFactoryWithoutFacets
 from .queries import CachedFacetsQueryFactory
 from .queries import CollectionSearchQueryFactoryWithFacets
 from .queries import MissingMatrixQueryFactoryWithFacets
+from .queries import MultipleTypesReportQueryFactoryWithFacets
 from .responses import AuditMatrixResponseWithFacets
 from .queries import TopHitsQueryFactory
 from .responses import BasicMatrixResponseWithFacets
@@ -258,6 +259,20 @@ class BasicReportWithoutFacetsResponseField(BasicSearchWithoutFacetsResponseFiel
 
     def _build_query(self):
         self.query_builder = BasicReportQueryFactoryWithoutFacets(
+            params_parser=self.get_params_parser(),
+            **self.kwargs
+        )
+        self.query = self.query_builder.build_query()
+
+
+class MultipleTypesReportWithFacetsResponseField(BasicSearchWithFacetsResponseField):
+    '''
+    Like BasicSearchWithFacetsResponseField but uses MultipleTypesReportQueryFactoryWithFacets
+    query builder.
+    '''
+
+    def _build_query(self):
+        self.query_builder = MultipleTypesReportQueryFactoryWithFacets(
             params_parser=self.get_params_parser(),
             **self.kwargs
         )

@@ -1181,6 +1181,35 @@ class BasicReportQueryFactoryWithoutFacets(BasicReportQueryFactory, BasicSearchQ
         super().__init__(params_parser, *args, **kwargs)
 
 
+class MultipleTypesReportQueryFactory(BasicSearchQueryFactory):
+    '''
+    Like BasicSearchQueryFactory but makes sure item types
+    are specified.
+    '''
+
+    def __init__(self, params_parser, *args, **kwargs):
+        super().__init__(params_parser, *args, **kwargs)
+
+    @assert_something_returned(error_message='Report view requires specifying types:')
+    def _get_item_types(self):
+        return super()._get_item_types()
+
+    def build_query(self):
+        self.validate_item_types()
+        self._get_item_types()
+        return super().build_query()
+
+
+class MultipleTypesReportQueryFactoryWithFacets(MultipleTypesReportQueryFactory, BasicSearchQueryFactoryWithFacets):
+    '''
+    Like BasicSearchQueryFactoryWithFacets but makes sure item types
+    are specified.
+    '''
+
+    def __init__(self, params_parser, *args, **kwargs):
+        super().__init__(params_parser, *args, **kwargs)
+
+
 class BasicMatrixQueryFactoryWithFacets(BasicSearchQueryFactoryWithFacets):
     '''
     Like BasicSearchQueryFactoryWithFacets but sets size to zero and adds a
