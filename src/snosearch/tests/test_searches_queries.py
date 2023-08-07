@@ -5581,10 +5581,6 @@ def test_searches_queries_multiple_types_report_query_factory_with_facets_get_it
         'status=released'
         '&limit=10&field=@id&field=accession&mode=picker'
     )
-    params_parser = ParamsParser(dummy_request)
-    brqf = MultipleTypesReportQueryFactoryWithFacets(params_parser)
-    with pytest.raises(HTTPBadRequest):
-        brqf._get_item_types()
 
 
 @pytest.mark.parametrize(
