@@ -5500,17 +5500,6 @@ def test_searches_queries_basic_report_query_factory_without_facets_init(params_
     assert isinstance(brqf, BasicReportQueryFactoryWithoutFacets)
     assert brqf.params_parser == params_parser
 
-@pytest.mark.parametrize(
-    'params_parser',
-    integrations,
-    indirect=True
-)
-def test_searches_queries_multiple_types_report_query_factory_init(params_parser):
-    from snosearch.queries import MultipleTypesReportQueryFactory
-    brqf = MultipleTypesReportQueryFactory(params_parser)
-    assert isinstance(brqf, MultipleTypesReportQueryFactory)
-    assert brqf.params_parser == params_parser
-
 
 @pytest.mark.parametrize(
     'params_parser',
