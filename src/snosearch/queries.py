@@ -1181,6 +1181,15 @@ class BasicReportQueryFactoryWithoutFacets(BasicReportQueryFactory, BasicSearchQ
         super().__init__(params_parser, *args, **kwargs)
 
 
+class MultipleTypesReportQueryFactoryWithFacets(BasicSearchQueryFactoryWithFacets):
+    '''
+    it's just an alias over BasicSearchQueryFactoryWithFacets
+    '''
+
+    def __init__(self, params_parser, *args, **kwargs):
+        super().__init__(params_parser, *args, **kwargs)
+
+
 class BasicMatrixQueryFactoryWithFacets(BasicSearchQueryFactoryWithFacets):
     '''
     Like BasicSearchQueryFactoryWithFacets but sets size to zero and adds a

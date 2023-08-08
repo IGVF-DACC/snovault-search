@@ -5502,6 +5502,17 @@ def test_searches_queries_basic_report_query_factory_without_facets_init(params_
 
 
 @pytest.mark.parametrize(
+    'params_parser',
+    integrations,
+    indirect=True
+)
+def test_searches_queries_multiple_types_report_query_factory_with_facets_init(params_parser):
+    from snosearch.queries import MultipleTypesReportQueryFactoryWithFacets
+    brqf = MultipleTypesReportQueryFactoryWithFacets(params_parser)
+    assert isinstance(brqf, MultipleTypesReportQueryFactoryWithFacets)
+    assert brqf.params_parser == params_parser
+
+@pytest.mark.parametrize(
     'params_parser, dummy_request',
     [
         ('pyramid', 'pyramid'),
@@ -5534,6 +5545,42 @@ def test_searches_queries_basic_report_query_factory_with_facets_get_item_types(
     brqf = BasicReportQueryFactoryWithFacets(params_parser)
     with pytest.raises(HTTPBadRequest):
         brqf._get_item_types()
+
+
+@pytest.mark.parametrize(
+    'params_parser, dummy_request',
+    [
+        ('pyramid', 'pyramid'),
+        ('flask', 'flask')
+    ],
+    indirect=True
+)
+def test_searches_queries_multiple_types_report_query_factory_with_facets_get_item_types(params_parser, dummy_request):
+    from snosearch.queries import MultipleTypesReportQueryFactoryWithFacets
+    from snosearch.parsers import ParamsParser
+    from pyramid.exceptions import HTTPBadRequest
+
+    brqf = MultipleTypesReportQueryFactoryWithFacets(params_parser)
+    item_types = brqf._get_item_types()
+    assert item_types == [
+        ('type', 'Experiment')
+    ]
+
+    dummy_request.environ['QUERY_STRING'] = (
+        'type=TestingSearchSchema&type=Experiment&status=released'
+        '&limit=10&field=@id&field=accession&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    brqf = MultipleTypesReportQueryFactoryWithFacets(params_parser)
+    item_types = brqf._get_item_types()
+    assert item_types == [
+        ('type', 'TestingSearchSchema'), ('type', 'Experiment')
+    ]
+
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released'
+        '&limit=10&field=@id&field=accession&mode=picker'
+    )
 
 
 @pytest.mark.parametrize(
