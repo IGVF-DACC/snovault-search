@@ -25,7 +25,6 @@ OPTIONAL_PARAMS = [
 ]
 
 FREE_TEXT_QUERIES = [
-    'searchTerm',
     'advancedQuery',
     'query',
 ]

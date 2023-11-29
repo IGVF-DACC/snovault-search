@@ -1298,7 +1298,7 @@ def parsed_params(dummy_request):
         '&biosample_ontology.term_name%21=naive+thymus-derived+CD4-positive%2C+alpha-beta+T+cell'
         '&file_type=bam&file_type=bigwig&file_type!=fastq&biosample.genetic_modifications=*'
         '&biosample.treatments!=ethanol&biosample.treatments!=methanol&restricted!=*'
-        '&limit=10&status=released&searchTerm=chip-seq&sort=date_created&sort=-files.file_size'
+        '&limit=10&status=released&query=chip-seq&sort=date_created&sort=-files.file_size'
         '&field=@id&field=accession'
     )
     dummy_request.context = DummyResource()

@@ -199,25 +199,25 @@ def test_searches_parsers_params_parser_get_search_term_filters(dummy_request):
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
         'type=Experiment&type=File&field=status&type!=Item'
-        '&searchTerm=my+favorite+experiment&searchTerm=my+other+experiment'
-        '&searchTerm!=whatever'
+        '&query=my+favorite+experiment&query=my+other+experiment'
+        '&query!=whatever'
     )
     p = ParamsParser(dummy_request)
     assert p.get_search_term_filters() == [
-        ('searchTerm', 'my favorite experiment'),
-        ('searchTerm', 'my other experiment'),
-        ('searchTerm!', 'whatever')
+        ('query', 'my favorite experiment'),
+        ('query', 'my other experiment'),
+        ('query!', 'whatever')
     ]
     dummy_request.environ['QUERY_STRING'] = (
         'type=Experiment&type=File&field=status&type!=Item'
-        '&searchTerm=my+favorite+experiment&searchTerm=my+other+experiment'
-        '&searchTerm!=whatever&query=newQuery'
+        '&query=my+favorite+experiment&query=my+other+experiment'
+        '&query!=whatever&query=newQuery'
     )
     p = ParamsParser(dummy_request)
     assert p.get_search_term_filters() == [
-        ('searchTerm', 'my favorite experiment'),
-        ('searchTerm', 'my other experiment'),
-        ('searchTerm!', 'whatever'),
+        ('query', 'my favorite experiment'),
+        ('query', 'my other experiment'),
+        ('query!', 'whatever'),
         ('query', 'newQuery'),
     ]
 
@@ -231,13 +231,13 @@ def test_searches_parsers_params_parser_get_must_match_search_term_filters(dummy
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
         'type=Experiment&type=File&field=status&type!=Item'
-        '&searchTerm=my+favorite+experiment&searchTerm=my+other+experiment'
-        '&searchTerm!=whatever'
+        '&query=my+favorite+experiment&query=my+other+experiment'
+        '&query!=whatever'
     )
     p = ParamsParser(dummy_request)
     assert p.get_must_match_search_term_filters() == [
-        ('searchTerm', 'my favorite experiment'),
-        ('searchTerm', 'my other experiment')
+        ('query', 'my favorite experiment'),
+        ('query', 'my other experiment')
     ]
 
 
@@ -250,12 +250,12 @@ def test_searches_parsers_params_parser_get_must_not_match_search_term_filters(d
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
         'type=Experiment&type=File&field=status&type!=Item'
-        '&searchTerm=my+favorite+experiment&searchTerm=my+other+experiment'
-        '&searchTerm!=whatever'
+        '&query=my+favorite+experiment&query=my+other+experiment'
+        '&query!=whatever'
     )
     p = ParamsParser(dummy_request)
     assert p.get_must_not_match_search_term_filters() == [
-        ('searchTerm!', 'whatever')
+        ('query!', 'whatever')
     ]
 
 
@@ -282,8 +282,8 @@ def test_searches_parsers_params_parser_get_advanced_query_filters(dummy_request
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
         'type=Experiment&type=File&field=status&type!=Item'
-        '&advancedQuery=my+favorite+experiment&searchTerm=my+other+experiment'
-        '&searchTerm!=whatever'
+        '&advancedQuery=my+favorite+experiment&query=my+other+experiment'
+        '&query!=whatever'
     )
     p = ParamsParser(dummy_request)
     assert p.get_advanced_query_filters() == [
@@ -302,7 +302,7 @@ def test_searches_parsers_params_parser_get_must_match_advanced_query_filters(du
         'type=Experiment&type=File&field=status&type!=Item'
         '&advancedQuery=date_created:[01/01/2018 TO 01/02/2019]'
         '&advancedQuery=@type:Experiment date_released:[2009-01-01 TO 2019-12-31]'
-        '&searchTerm=whatever'
+        '&query=whatever'
     )
     p = ParamsParser(dummy_request)
     assert p.get_must_match_advanced_query_filters() == [
@@ -337,7 +337,7 @@ def test_searches_parsers_params_parser_get_field_filters(dummy_request):
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
         'type=Experiment&type=File&field=status&type!=Item'
-        '&searchTerm=my+favorite+experiment&searchTerm=my+other+experiment'
+        '&query=my+favorite+experiment&query=my+other+experiment'
     )
     p = ParamsParser(dummy_request)
     assert p.get_field_filters() == [

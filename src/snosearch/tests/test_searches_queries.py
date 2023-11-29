@@ -21,7 +21,7 @@ def params_parser(request, pyramid_dummy_request, flask_dummy_request):
         '&assembly=GRCh38&biosample_ontology.classification=primary+cell'
         '&target.label=H3K27me3&biosample_ontology.classification%21=cell+line'
         '&biosample_ontology.term_name%21=naive+thymus-derived+CD4-positive%2C+alpha-beta+T+cell'
-        '&limit=10&status=released&searchTerm=chip-seq&sort=date_created&sort=-files.file_size'
+        '&limit=10&status=released&query=chip-seq&sort=date_created&sort=-files.file_size'
         '&field=@id&field=accession'
     )
     dummy_request.registry[ELASTIC_SEARCH] = Elasticsearch()
@@ -1022,7 +1022,7 @@ def test_searches_queries_abstract_query_factory_get_facets_from_configs(dummy_r
     from snosearch.queries import AbstractQueryFactory
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema'
     )
     params_parser = ParamsParser(dummy_request)
@@ -1033,7 +1033,7 @@ def test_searches_queries_abstract_query_factory_get_facets_from_configs(dummy_r
         ('name', {'title': 'Name'})
     ]
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema&config=TestConfigItem'
     )
     params_parser = ParamsParser(dummy_request)
@@ -1043,7 +1043,7 @@ def test_searches_queries_abstract_query_factory_get_facets_from_configs(dummy_r
         ('a', 'b')
     ]
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema&config=TestingSearchSchemaSpecialFacets'
     )
     params_parser = ParamsParser(dummy_request)
@@ -1055,7 +1055,7 @@ def test_searches_queries_abstract_query_factory_get_facets_from_configs(dummy_r
         ('name', {'title': 'Name'})
     ]
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema&config=TestingPostPutPatch'
     )
     params_parser = ParamsParser(dummy_request)
@@ -1125,7 +1125,7 @@ def test_searches_queries_abstract_query_factory_get_query_string_query(params_p
     assert aq._get_query_string_query() == 'cherry'
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&advancedQuery=@type:Experiment date_created:[01-01-2018 TO 01-02-2018'
-        '&searchTerm=ctcf'
+        '&query=ctcf'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -1153,7 +1153,7 @@ def test_searches_queries_abstract_query_factory_get_simple_query_string_query(p
     aq = AbstractQueryFactory(params_parser)
     assert aq._get_simple_query_string_query() is None
     dummy_request.environ['QUERY_STRING'] = (
-        'status=released&searchTerm=cherry'
+        'status=released&query=cherry'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -1166,7 +1166,7 @@ def test_searches_queries_abstract_query_factory_get_simple_query_string_query(p
     assert aq._get_simple_query_string_query() is None
     dummy_request.environ['QUERY_STRING'] = (
         'status=released&advancedQuery=@type:Experiment date_created:[01-01-2018 TO 01-02-2018'
-        '&searchTerm=ctcf'
+        '&query=ctcf'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -1187,13 +1187,13 @@ def test_searches_queries_abstract_query_factory_get_reserved_keys(params_parser
             'Pancake'
         ],
         reserved_keys=[
-            'searchTerm',
+            'query',
             'limit',
         ],
     )
     reserved_keys = aq._get_reserved_keys()
     assert reserved_keys == [
-        'searchTerm',
+        'query',
         'limit',
     ]
     filters = aq._get_filters()
@@ -1235,7 +1235,7 @@ def test_searches_queries_abstract_query_factory_get_reserved_keys(params_parser
         'cart',
         'debug',
         'config',
-        'searchTerm',
+        'query',
         'advancedQuery',
         'query',
     ]
@@ -1310,7 +1310,7 @@ def test_searches_queries_abstract_query_factory_should_add_default_sort(dummy_r
     aq = AbstractQueryFactory(params_parser)
     assert aq._should_add_default_sort()
     dummy_request.environ['QUERY_STRING'] = (
-        'type=TestingSearchSchema&status=released&searchTerm=ctcf'
+        'type=TestingSearchSchema&status=released&query=ctcf'
         '&limit=10&limit=50&field=@id&mode=picker&mode=chair&field=accession'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2107,7 +2107,7 @@ def test_searches_queries_abstract_query_factory_combine_search_term_queries(dum
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -2117,7 +2117,7 @@ def test_searches_queries_abstract_query_factory_combine_search_term_queries(dum
     )
     assert combined_search_terms == 'chip-seq AND rna AND NOT ENCODE 2'
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq'
+        'query=chip-seq'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -2127,7 +2127,7 @@ def test_searches_queries_abstract_query_factory_combine_search_term_queries(dum
     )
     assert combined_search_terms == 'chip-seq'
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm!=rna&searchTerm!=ENCODE+2'
+        'query!=rna&query!=ENCODE+2'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -2208,7 +2208,7 @@ def test_searches_queries_abstract_query_factory_get_config_param_values(dummy_r
     from snosearch.configs import SearchConfig
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&config=TestingSearchSchema'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2217,7 +2217,7 @@ def test_searches_queries_abstract_query_factory_get_config_param_values(dummy_r
     assert len(configs) == 1
     assert configs == ['TestingSearchSchema']
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&config=TestingSearchSchema&config=custom'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2226,7 +2226,7 @@ def test_searches_queries_abstract_query_factory_get_config_param_values(dummy_r
     assert len(configs) == 2
     assert configs == ['TestingSearchSchema', 'custom']
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -2245,7 +2245,7 @@ def test_searches_queries_abstract_query_factory_get_configs_from_config_param_v
     from snosearch.configs import SearchConfig
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&config=TestingSearchSchema'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2268,7 +2268,7 @@ def test_searches_queries_abstract_query_factory_get_configs_from_item_types_as_
     from snosearch.configs import SearchConfig
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2279,7 +2279,7 @@ def test_searches_queries_abstract_query_factory_get_configs_from_item_types_as_
     assert configs[0].name == 'TestingSearchSchema'
     assert len(aq._get_configs_from_item_types_as_individual_keys()) == 1
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema&type=TestingSearchSchemaSpecialFacets'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2299,7 +2299,7 @@ def test_searches_queries_abstract_query_factory_get_configs_from_item_types_as_
     from snosearch.configs import SearchConfig
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2310,7 +2310,7 @@ def test_searches_queries_abstract_query_factory_get_configs_from_item_types_as_
     assert configs[0].name == 'TestingSearchSchema'
     assert len(aq._get_configs_from_item_types_as_combined_key()) == 1
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema&type=TestingSearchSchemaSpecialFacets'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2330,7 +2330,7 @@ def test_searches_queries_abstract_query_factory_get_configs_from_default_item_t
     from snosearch.configs import SearchConfig
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -2372,7 +2372,7 @@ def test_searches_queries_abstract_query_factory_get_configs_from_param_values_o
     from snosearch.configs import SearchConfig
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&type=TestingSearchSchema'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2382,14 +2382,14 @@ def test_searches_queries_abstract_query_factory_get_configs_from_param_values_o
     assert isinstance(configs[0], SearchConfig)
     assert configs[0].name == 'TestingSearchSchema'
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
     configs = aq._get_configs_from_param_values_or_item_types_as_combined_key()
     assert len(configs) == 0
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&searchTerm=rna&searchTerm!=ENCODE+2'
+        'query=chip-seq&query=rna&query!=ENCODE+2'
         '&config=TestingSearchSchema&config=TestConfigItem'
     )
     params_parser = ParamsParser(dummy_request)
@@ -2416,7 +2416,7 @@ def test_searches_queries_abstract_query_factory_show_internal_audits(dummy_requ
         '&assembly=GRCh38&biosample_ontology.classification=primary+cell'
         '&target.label=H3K27me3&biosample_ontology.classification%21=cell+line'
         '&biosample_ontology.term_name%21=naive+thymus-derived+CD4-positive%2C+alpha-beta+T+cell'
-        '&limit=10&status=released&searchTerm=chip-seq&sort=date_created&sort=-files.file_size'
+        '&limit=10&status=released&query=chip-seq&sort=date_created&sort=-files.file_size'
         '&field=@id&field=accession'
     )
     dummy_request.context = DummyResource()
@@ -2447,7 +2447,7 @@ def test_searches_queries_abstract_query_factory_get_audit_facets(dummy_request)
         '&assembly=GRCh38&biosample_ontology.classification=primary+cell'
         '&target.label=H3K27me3&biosample_ontology.classification%21=cell+line'
         '&biosample_ontology.term_name%21=naive+thymus-derived+CD4-positive%2C+alpha-beta+T+cell'
-        '&limit=10&status=released&searchTerm=chip-seq&sort=date_created&sort=-files.file_size'
+        '&limit=10&status=released&query=chip-seq&sort=date_created&sort=-files.file_size'
         '&field=@id&field=accession'
     )
     dummy_request.context = DummyResource()
@@ -3170,7 +3170,7 @@ def test_searches_queries_abstract_query_factory_map_param_keys_to_elasticsearch
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&status=released'
+        'query=chip-seq&type=TestingSearchSchema&status=released'
         '&audit.WARNING.category=missing+biosample+characterization&file_size=12'
         '&limit=all'
     )
@@ -3196,7 +3196,7 @@ def test_searches_queries_abstract_query_factory_map_param_values_to_elasticsear
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&status=released'
+        'query=chip-seq&type=TestingSearchSchema&status=released'
         '&audit.WARNING.category=missing+biosample+characterization&file_size=12'
         '&field=status&field=@id&field=type&field=audit'
         '&limit=all'
@@ -3223,7 +3223,7 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query(d
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq'
+        'query=chip-seq'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -3374,7 +3374,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_query_and_simp
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&advancedQuery=date_released:[01-01-2018 TO 01-01-2019]'
+        'query=chip-seq&advancedQuery=date_released:[01-01-2018 TO 01-01-2019]'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -3480,7 +3480,7 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query_w
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&status=released'
+        'query=chip-seq&type=TestingSearchSchema&status=released'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -3567,7 +3567,7 @@ def test_searches_queries_abstract_query_factory_add_simple_query_string_query_w
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq'
+        'query=chip-seq'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(
@@ -4416,7 +4416,7 @@ def test_searches_queries_abstract_query_factory_add_query_string_and_post_filte
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&status=*&restricted!=*'
+        'query=chip-seq&type=TestingSearchSchema&status=*&restricted!=*'
         '&no_file_available!=*&limit=10&field=@id&field=accession&lab.name=*'
         '&file_type=bam'
     )
@@ -4496,7 +4496,7 @@ def test_searches_queries_abstract_query_factory_add_source_object(dummy_request
     from snosearch.queries import AbstractQueryFactory
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object'
+        'query=chip-seq&type=TestingSearchSchema&frame=object'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
@@ -4524,42 +4524,42 @@ def test_searches_queries_abstract_query_factory_add_slice(params_parser, dummy_
     aq.add_slice()
     assert aq.search.to_dict() == {'from': 0, 'size': 10}
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=all'
+        'query=chip-seq&type=TestingSearchSchema&frame=object&limit=all'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
     aq.add_slice()
     assert aq.search.to_dict() == {'from': 0, 'size': 0}
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=3000'
+        'query=chip-seq&type=TestingSearchSchema&frame=object&limit=3000'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
     aq.add_slice()
     assert aq.search.to_dict() == {'from': 0, 'size': 3000}
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=blah'
+        'query=chip-seq&type=TestingSearchSchema&frame=object&limit=blah'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
     aq.add_slice()
     assert aq.search.to_dict() == {'from': 0, 'size': 25}
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=10000'
+        'query=chip-seq&type=TestingSearchSchema&frame=object&limit=10000'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
     aq.add_slice()
     assert aq.search.to_dict() == {'from': 0, 'size': 10000}
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=100000'
+        'query=chip-seq&type=TestingSearchSchema&frame=object&limit=100000'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
     aq.add_slice()
     assert aq.search.to_dict() == {'from': 0, 'size': 0}
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=chip-seq&type=TestingSearchSchema&frame=object&limit=100000'
+        'query=chip-seq&type=TestingSearchSchema&frame=object&limit=100000'
     )
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(
@@ -6781,7 +6781,7 @@ def test_searches_queries_top_hits_query_factory_build_query(dummy_request):
     from snosearch.parsers import ParamsParser
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=ep300'
+        'query=ep300'
     )
     dummy_request.context = DummyResource()
     params_parser = ParamsParser(dummy_request)
@@ -6864,7 +6864,7 @@ def test_searches_queries_top_hits_query_factory_build_query_with_filter(dummy_r
     from snosearch.parsers import ParamsParser
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=ep300&type=TestingSearchSchema&status=released'
+        'query=ep300&type=TestingSearchSchema&status=released'
     )
     dummy_request.context = DummyResource()
     params_parser = ParamsParser(dummy_request)
@@ -7033,7 +7033,7 @@ def test_searches_queries_top_hits_query_factory_make_top_hits_by_type_aggregati
 def test_searches_queries_top_hits_query_factory_add_filtered_top_hits_aggregation(params_parser, dummy_request):
     from snosearch.queries import TopHitsQueryFactory
     dummy_request.environ['QUERY_STRING'] = (
-        'searchTerm=blah&status=released'
+        'query=blah&status=released'
     )
     th = TopHitsQueryFactory(params_parser)
     th.add_filtered_top_hits_aggregation()

@@ -329,7 +329,7 @@ def test_searches_fields_basic_report_with_facets_response_build_query(dummy_par
     brf = BasicReportWithFacetsResponseField()
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     brf.parent = dummy_parent
     brf._build_query()
@@ -348,7 +348,7 @@ def test_searches_fields_multiple_types_report_with_facets_response_build_query(
     brf = MultipleTypesReportWithFacetsResponseField()
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     brf.parent = dummy_parent
     brf._build_query()
@@ -368,7 +368,7 @@ def test_searches_fields_basic_report_without_facets_response_build_query(dummy_
     brf = BasicReportWithoutFacetsResponseField()
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     brf.parent = dummy_parent
     brf._build_query()
@@ -636,7 +636,7 @@ def test_searches_fields_filters_response_field_init(dummy_parent):
 def test_searches_fields_filters_response_field_get_filters_and_search_terms_from_query_string(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import FiltersResponseField
     frf = FiltersResponseField()
@@ -646,7 +646,7 @@ def test_searches_fields_filters_response_field_get_filters_and_search_terms_fro
         ('award.project', 'Roadmap'),
         ('restricted!', '*'),
         ('type', 'Experiment'),
-        ('searchTerm', 'ctcf')
+        ('query', 'ctcf')
     ]
     actual = frf._get_filters_and_search_terms_from_query_string()
     assert len(actual) == len(expected)
@@ -661,26 +661,26 @@ def test_searches_fields_filters_response_field_get_filters_and_search_terms_fro
 def test_searches_fields_filters_response_field_get_path_qs_without_filter(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import FiltersResponseField
     frf = FiltersResponseField()
     frf.parent = dummy_parent
     assert frf._get_path_qs_without_filter('type', 'Experiment') == (
         '/dummy?assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all'
-        '&frame=embedded&restricted%21=%2A&searchTerm=ctcf'
+        '&frame=embedded&restricted%21=%2A&query=ctcf'
     )
-    assert frf._get_path_qs_without_filter('searchTerm', 'ctcf') == (
+    assert frf._get_path_qs_without_filter('query', 'ctcf') == (
         '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all'
         '&frame=embedded&restricted%21=%2A'
     )
-    assert frf._get_path_qs_without_filter('searchTerm', 'ctcaf') == (
+    assert frf._get_path_qs_without_filter('query', 'ctcaf') == (
         '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all'
-        '&frame=embedded&restricted%21=%2A&searchTerm=ctcf'
+        '&frame=embedded&restricted%21=%2A&query=ctcf'
     )
     assert frf._get_path_qs_without_filter('restricted!', '*') == (
         '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all'
-        '&frame=embedded&searchTerm=ctcf'
+        '&frame=embedded&query=ctcf'
     )
 
 
@@ -692,22 +692,22 @@ def test_searches_fields_filters_response_field_get_path_qs_without_filter(dummy
 def test_searches_fields_filters_response_field_get_path_qs_without_filter_malformed_query(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import FiltersResponseField
     frf = FiltersResponseField()
     frf.parent = dummy_parent
     assert frf._get_path_qs_without_filter('files.file_type', '') == (
         '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted%21=%2A&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted%21=%2A&query=ctcf'
     )
     assert frf._get_path_qs_without_filter('', '') == (
         '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted%21=%2A&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted%21=%2A&query=ctcf'
     )
     assert frf._get_path_qs_without_filter('', '*') == (
         '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted%21=%2A&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted%21=%2A&query=ctcf'
     )
 
 
@@ -719,7 +719,7 @@ def test_searches_fields_filters_response_field_get_path_qs_without_filter_malfo
 def test_searches_fields_filters_response_field_make_filter(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import FiltersResponseField
     frf = FiltersResponseField()
@@ -727,7 +727,7 @@ def test_searches_fields_filters_response_field_make_filter(dummy_parent):
     frf._make_filter('type', 'Experiment')
     assert frf.filters[0] == {
         'field': 'type',
-        'remove': '/dummy?assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all&frame=embedded&restricted%21=%2A&searchTerm=ctcf',
+        'remove': '/dummy?assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all&frame=embedded&restricted%21=%2A&query=ctcf',
         'term': 'Experiment'
     }
 
@@ -740,7 +740,7 @@ def test_searches_fields_filters_response_field_make_filter(dummy_parent):
 def test_searches_fields_filters_response_field_make_filters(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import FiltersResponseField
     frf = FiltersResponseField()
@@ -748,28 +748,28 @@ def test_searches_fields_filters_response_field_make_filters(dummy_parent):
     frf._make_filters()
     expected = [
         {
-            'remove': '/dummy?type=Experiment&award.project=Roadmap&limit=all&frame=embedded&restricted%21=%2A&searchTerm=ctcf',
+            'remove': '/dummy?type=Experiment&award.project=Roadmap&limit=all&frame=embedded&restricted%21=%2A&query=ctcf',
             'field': 'assay_title',
             'term': 'Histone ChIP-seq'
         },
         {
-            'remove': '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&limit=all&frame=embedded&restricted%21=%2A&searchTerm=ctcf',
+            'remove': '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&limit=all&frame=embedded&restricted%21=%2A&query=ctcf',
             'field': 'award.project',
             'term': 'Roadmap'
         },
         {
-            'remove': '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all&frame=embedded&searchTerm=ctcf',
+            'remove': '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all&frame=embedded&query=ctcf',
             'field': 'restricted!',
             'term': '*'
         },
         {
-            'remove': '/dummy?assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all&frame=embedded&restricted%21=%2A&searchTerm=ctcf',
+            'remove': '/dummy?assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all&frame=embedded&restricted%21=%2A&query=ctcf',
             'field': 'type',
             'term': 'Experiment'
         },
         {
             'remove': '/dummy?type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap&limit=all&frame=embedded&restricted%21=%2A',
-            'field': 'searchTerm',
+            'field': 'query',
             'term': 'ctcf'
         }
     ]
@@ -786,13 +786,13 @@ def test_searches_fields_filters_response_field_make_filters(dummy_parent):
 def test_searches_fields_clear_filter_response_field_get_search_term_or_types_from_query_string(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import ClearFiltersResponseField
     cfr = ClearFiltersResponseField()
     cfr.parent = dummy_parent
     search_term_or_types = cfr._get_search_term_or_types_from_query_string()
-    assert search_term_or_types == [('searchTerm', 'ctcf')]
+    assert search_term_or_types == [('query', 'ctcf')]
     cfr.parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
         '&limit=all&frame=embedded&restricted!=*'
@@ -809,7 +809,7 @@ def test_searches_fields_clear_filter_response_field_get_search_term_or_types_fr
 def test_searches_fields_type_only_clear_filter_response_field_get_search_term_or_types_from_query_string(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import TypeOnlyClearFiltersResponseField
     tcfr = TypeOnlyClearFiltersResponseField()
@@ -833,13 +833,13 @@ def test_searches_fields_type_only_clear_filter_response_field_get_search_term_o
 def test_searches_fields_clear_filter_response_field_get_path_qs_with_no_filters(dummy_parent):
     dummy_parent._meta['params_parser']._request.environ['QUERY_STRING'] = (
         'type=Experiment&assay_title=Histone+ChIP-seq&award.project=Roadmap'
-        '&limit=all&frame=embedded&restricted!=*&searchTerm=ctcf'
+        '&limit=all&frame=embedded&restricted!=*&query=ctcf'
     )
     from snosearch.fields import ClearFiltersResponseField
     cfr = ClearFiltersResponseField()
     cfr.parent = dummy_parent
     path = cfr._get_path_qs_with_no_filters()
-    assert path == '/dummy?searchTerm=ctcf'
+    assert path == '/dummy?query=ctcf'
 
 
 @pytest.mark.parametrize(

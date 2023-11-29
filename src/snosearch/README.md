@@ -47,7 +47,7 @@ All of these steps call other classes to do the work for them.
 - *AbstractQueryFactory* has a method called build_query() that is not implemented. The point is to have the subclasses of *AbstractQueryFactory* use this method to define how they should build up their specific queries. The subclasses should make use of the common methods in the *AbstractQueryFactory* class or implement their own private helper methods. Ideally any additional functionality will be an extension (new class that wraps base functionality) rather than a revision of the base class.
 - Example of steps in *BasicQueryFactory*.build_query():
     - validate_item_types() - checks to see if the types (e.g. Experiment, File, etc.) passed in by the user are valid types
-    - add_simple_query_string_query() - adds searchTerm=... value to raw ES query
+    - add_simple_query_string_query() - adds query=... value to raw ES query
     - add_query_string_query() - adds advancedQuery=... value to raw ES query
     - add_filters() - adds filters such as status=released or assay_title=Chip-seq to raw ES query
     - add_post_filters() - adds permission filters based on viewing permission of user to raw ES query
