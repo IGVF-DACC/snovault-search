@@ -553,7 +553,7 @@ class ClearFiltersResponseField(ResponseField):
 class TypeOnlyClearFiltersResponseField(ClearFiltersResponseField):
     '''
     Like ClearFiltersResponseField but always returns types even if
-    searchTerm is in query string.
+    query is in query string.
     '''
 
     def _get_search_term_or_types_from_query_string(self):
