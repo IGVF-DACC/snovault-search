@@ -9,6 +9,7 @@ from .interfaces import EXISTS
 from .interfaces import FIELD_KEY
 from .interfaces import FROM_KEY
 from .interfaces import FRAME_KEY
+from .interfaces import SEARCH_FRAME_KEY
 from .interfaces import INEQUALITY_REGEX
 from .interfaces import LIMIT_KEY
 from .interfaces import MUST
@@ -322,6 +323,12 @@ class ParamsParser:
     def get_frame(self, params=None):
         return self.get_key_filters(
             key=FRAME_KEY,
+            params=params
+        )
+
+    def get_search_frame(self, params=None):
+        return self.get_key_filters(
+            key=SEARCH_FRAME_KEY,
             params=params
         )
 

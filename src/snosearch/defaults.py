@@ -10,6 +10,7 @@ OPTIONAL_PARAMS = [
     'annotation',
     'format',
     'frame',
+    'searchframe',
     'datastore',
     'field',
     'region',

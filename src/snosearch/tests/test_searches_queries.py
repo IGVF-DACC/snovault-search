@@ -1223,6 +1223,7 @@ def test_searches_queries_abstract_query_factory_get_reserved_keys(params_parser
         'annotation',
         'format',
         'frame',
+        'searchframe',
         'datastore',
         'field',
         'region',

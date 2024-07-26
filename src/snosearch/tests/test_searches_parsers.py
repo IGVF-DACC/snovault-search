@@ -982,6 +982,27 @@ def test_searches_parsers_params_parser_get_frame(dummy_request):
     integrations,
     indirect=True
 )
+def test_searches_parsers_params_parser_get_search_frame(dummy_request):
+    from snosearch.parsers import ParamsParser
+    dummy_request.environ['QUERY_STRING'] = (
+        'status!=submitted&type=File&sort=date_created'
+    )
+    p = ParamsParser(dummy_request)
+    assert p.get_search_frame() == []
+    dummy_request.environ['QUERY_STRING'] = (
+        'searchframe=object&status!=submitted&type=File&sort=date_created'
+    )
+    p = ParamsParser(dummy_request)
+    assert p.get_search_frame() == [
+        ('searchframe', 'object')
+    ]
+
+
+@pytest.mark.parametrize(
+    'dummy_request',
+    integrations,
+    indirect=True
+)
 def test_searches_parsers_params_parser_get_mode(dummy_request):
     from snosearch.parsers import ParamsParser
     dummy_request.environ['QUERY_STRING'] = (
