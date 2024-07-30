@@ -6,7 +6,6 @@ from antlr4 import IllegalStateException
 from lucenequery import dialects
 from lucenequery.prefixfields import prefixfields
 
-
 from .adapters.exceptions import get_default_exception
 from .configs import ExistsAggregationConfig
 from .configs import TermsAggregationConfig
@@ -432,7 +431,12 @@ class AbstractQueryFactory:
         else:
             k, order = key, ASC
         return {
-            self._make_sort_key(k): self._make_sort_value(order)
+            self._make_sort_key(
+                k,
+                prefix=self._get_search_frame_prefix_value()
+            ): self._make_sort_value(
+                order
+            )
         }
 
     def _get_default_sort(self):
@@ -791,13 +795,15 @@ class AbstractQueryFactory:
         Special rules for mapping param to actual field in ES.
         For exampe type -> embedded.@type.
         '''
-
         if param == TYPE_KEY:
             return EMBEDDED_TYPE
         elif param.startswith(AUDIT):
             return param
         else:
-            return self._prefix_value(EMBEDDED, param)
+            return self._prefix_value(
+                self._get_search_frame_prefix_value(),
+                param
+            )
 
     def _map_param_keys_to_elasticsearch_fields(self, params):
         '''

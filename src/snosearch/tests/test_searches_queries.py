@@ -3233,12 +3233,47 @@ def test_searches_queries_abstract_query_factory_make_stats_aggregation(params_p
     }
 
 
-def test_searches_queries_abstract_query_factory_map_param_to_elasticsearch_field():
+def test_searches_queries_abstract_query_factory_map_param_to_elasticsearch_field(dummy_request):
+    from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
-    aq = AbstractQueryFactory({})
+    dummy_request.environ['QUERY_STRING'] = (
+        'query=chip-seq'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
     assert aq._map_param_to_elasticsearch_field('type') == 'embedded.@type'
     assert aq._map_param_to_elasticsearch_field('audit.WARNING.category') == 'audit.WARNING.category'
     assert aq._map_param_to_elasticsearch_field('status') == 'embedded.status'
+    dummy_request.environ['QUERY_STRING'] = (
+        'query=chip-seq&searchframe=object'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._map_param_to_elasticsearch_field('type') == 'embedded.@type'
+    assert aq._map_param_to_elasticsearch_field('audit.WARNING.category') == 'audit.WARNING.category'
+    assert aq._map_param_to_elasticsearch_field('status') == 'object.status'
+    assert aq._map_param_to_elasticsearch_field('lab') == 'object.lab'
+    assert aq._map_param_to_elasticsearch_field('cloud_metadata.uri') == 'object.cloud_metadata.uri'
+    dummy_request.environ['QUERY_STRING'] = (
+        'query=chip-seq&searchframe=embedded'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._map_param_to_elasticsearch_field('type') == 'embedded.@type'
+    assert aq._map_param_to_elasticsearch_field('audit.WARNING.category') == 'audit.WARNING.category'
+    assert aq._map_param_to_elasticsearch_field('status') == 'embedded.status'
+    assert aq._map_param_to_elasticsearch_field('lab') == 'embedded.lab'
+    assert aq._map_param_to_elasticsearch_field('cloud_metadata.uri') == 'embedded.cloud_metadata.uri'
+    dummy_request.environ['QUERY_STRING'] = (
+        'query=chip-seq&searchframe=wrongvalue'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._map_param_to_elasticsearch_field('type') == 'embedded.@type'
+    assert aq._map_param_to_elasticsearch_field('audit.WARNING.category') == 'audit.WARNING.category'
+    assert aq._map_param_to_elasticsearch_field('status') == 'embedded.status'
+    assert aq._map_param_to_elasticsearch_field('lab') == 'embedded.lab'
+    assert aq._map_param_to_elasticsearch_field('cloud_metadata.uri') == 'embedded.cloud_metadata.uri'
 
 
 @pytest.mark.parametrize(
