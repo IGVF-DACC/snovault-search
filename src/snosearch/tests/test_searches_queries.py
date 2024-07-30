@@ -913,8 +913,9 @@ def test_searches_queries_abstract_query_factory_escape_reserved_query_string_ch
     integrations,
     indirect=True
 )
-def test_searches_queries_abstract_query_factory_validated_query_string_query(params_parser_snovault_types):
+def test_searches_queries_abstract_query_factory_validated_query_string_query(dummy_request, params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
+    from snosearch.parsers import ParamsParser
     from pyramid.exceptions import HTTPBadRequest
     aq = AbstractQueryFactory(params_parser_snovault_types)
     assert aq._validated_query_string_query('ctcf') == 'ctcf'
@@ -931,6 +932,15 @@ def test_searches_queries_abstract_query_factory_validated_query_string_query(pa
     for c in special_chars.split(' '):
         with pytest.raises(HTTPBadRequest):
             aq._validated_query_string_query(c)
+    dummy_request.environ['QUERY_STRING'] = (
+        'query=chip-seq&searchframe=object'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._validated_query_string_query('ctcf') == 'ctcf'
+    assert aq._validated_query_string_query(
+        '@type:Experiment date_created:[01-01-2018 TO 01-02-2018]'
+    ) == 'object.@type:Experiment object.date_created:[01-01-2018 TO 01-02-2018]'
 
 
 @pytest.mark.parametrize(

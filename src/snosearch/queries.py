@@ -324,7 +324,8 @@ class AbstractQueryFactory:
 
     def _validated_query_string_query(self, query):
         try:
-            query = prefixfields(EMBEDDED, query, dialects.elasticsearch)
+            prefix = self._get_search_frame_prefix_value() or EMBEDDED
+            query = prefixfields(prefix, query, dialects.elasticsearch)
         except IllegalStateException:
             msg = "Invalid query: {}".format(query)
             raise get_default_exception()(explanation=msg)
