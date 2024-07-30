@@ -1925,6 +1925,36 @@ def test_searches_queries_abstract_query_factory_get_frame(dummy_request):
     integrations,
     indirect=True
 )
+def test_searches_queries_abstract_query_factory_get_search_frame(dummy_request):
+    from snosearch.parsers import ParamsParser
+    from snosearch.queries import AbstractQueryFactory
+    from pyramid.exceptions import HTTPBadRequest
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&searchframe=object'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._get_search_frame() == [('searchframe', 'object')]
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&searchframe=embedded&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._get_search_frame() == [('searchframe', 'embedded')]
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&searchframe=embedded&searchframe=object'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    with pytest.raises(HTTPBadRequest):
+         aq._get_search_frame()
+
+
+@pytest.mark.parametrize(
+    'dummy_request',
+    integrations,
+    indirect=True
+)
 def test_searches_queries_abstract_query_factory_get_frame_value(dummy_request):
     from snosearch.parsers import ParamsParser
     from snosearch.queries import AbstractQueryFactory
@@ -1940,6 +1970,28 @@ def test_searches_queries_abstract_query_factory_get_frame_value(dummy_request):
     params_parser = ParamsParser(dummy_request)
     aq = AbstractQueryFactory(params_parser)
     assert aq._get_frame_value() is None
+
+
+@pytest.mark.parametrize(
+    'dummy_request',
+    integrations,
+    indirect=True
+)
+def test_searches_queries_abstract_query_factory_get_search_frame_value(dummy_request):
+    from snosearch.parsers import ParamsParser
+    from snosearch.queries import AbstractQueryFactory
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&searchframe=object&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._get_search_frame_value() == 'object'
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._get_search_frame_value() is None
 
 
 @pytest.mark.parametrize(

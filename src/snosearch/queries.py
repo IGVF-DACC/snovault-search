@@ -545,9 +545,18 @@ class AbstractQueryFactory:
     def _get_frame(self):
         return self.params_parser.get_frame()
 
+    @assert_one_or_none_returned(error_message='Invalid to specify multiple searchframe parameters:')
+    def _get_search_frame(self):
+        return self.params_parser.get_search_frame()
+
     def _get_frame_value(self):
         return self.params_parser.get_one_value(
             params=self._get_frame()
+        )
+
+    def _get_search_frame_value(self):
+        return self.params_parser.get_one_value(
+            params=self._get_search_frame()
         )
 
     def _get_fields(self):
