@@ -1,6 +1,8 @@
 from .interfaces import AUDIT
 from .interfaces import EMBEDDED_FRAME
 from .interfaces import OBJECT_FRAME
+from .interfaces import EMBEDDED
+from .interfaces import OBJECTED
 
 
 OPTIONAL_PARAMS = [
@@ -94,6 +96,11 @@ DEFAULT_FRAMES = [
     EMBEDDED_FRAME,
     OBJECT_FRAME,
 ]
+
+SEARCH_FRAME_MAP = {
+    EMBEDDED_FRAME: EMBEDDED,
+    OBJECT_FRAME: OBJECTED,
+}
 
 KEEP_LAYERED_FIELDS = [
     AUDIT,

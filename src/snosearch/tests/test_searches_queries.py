@@ -1995,6 +1995,34 @@ def test_searches_queries_abstract_query_factory_get_search_frame_value(dummy_re
 
 
 @pytest.mark.parametrize(
+    'dummy_request',
+    integrations,
+    indirect=True
+)
+def test_searches_queries_abstract_query_factory_get_search_frame_prefix_value(dummy_request):
+    from snosearch.parsers import ParamsParser
+    from snosearch.queries import AbstractQueryFactory
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&searchframe=object&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._get_search_frame_prefix_value() == 'object.'
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&searchframe=embedded&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._get_search_frame_prefix_value() == 'embedded.'
+    dummy_request.environ['QUERY_STRING'] = (
+        'status=released&mode=picker'
+    )
+    params_parser = ParamsParser(dummy_request)
+    aq = AbstractQueryFactory(params_parser)
+    assert aq._get_search_frame_prefix_value() == 'embedded.'
+
+
+@pytest.mark.parametrize(
     'params_parser_snovault_types',
     integrations,
     indirect=True

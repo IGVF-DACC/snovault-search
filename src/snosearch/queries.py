@@ -29,6 +29,7 @@ from .defaults import DEFAULT_SORT_OPTIONS
 from .defaults import INTERNAL_AUDIT_FACETS
 from .defaults import MAX_ES_RESULTS_WINDOW
 from .defaults import NOT_FILTERS
+from .defaults import SEARCH_FRAME_MAP
 from .interfaces import ALL
 from .interfaces import AND
 from .interfaces import AND_JOIN
@@ -558,6 +559,12 @@ class AbstractQueryFactory:
         return self.params_parser.get_one_value(
             params=self._get_search_frame()
         )
+
+    def _get_search_frame_prefix_value(self):
+        value = self._get_search_frame_value()
+        if value in SEARCH_FRAME_MAP:
+            return SEARCH_FRAME_MAP[value]
+        return EMBEDDED
 
     def _get_fields(self):
         return self.params_parser.get_field_filters()
