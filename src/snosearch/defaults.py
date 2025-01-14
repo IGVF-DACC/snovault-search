@@ -2,6 +2,8 @@ from .interfaces import AUDIT
 from .interfaces import EMBEDDED_FRAME
 from .interfaces import OBJECT_FRAME
 
+from typing import List
+
 
 OPTIONAL_PARAMS = [
     'type',
@@ -121,4 +123,4 @@ DEFAULT_TERMS_AGGREGATION_KWARGS = [
     'aggs',
 ]
 
-DEFAULT_EXISTS_AGGREGATION_KWARGS = []
+DEFAULT_EXISTS_AGGREGATION_KWARGS: List[str] = []

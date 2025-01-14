@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 from .defaults import DEFAULT_TERMS_AGGREGATION_KWARGS
 from .defaults import DEFAULT_EXISTS_AGGREGATION_KWARGS
 from .interfaces import SEARCH_CONFIG
@@ -95,6 +96,7 @@ def flatten_single_values(values):
     if len(values) == 1:
         return values[0]
     return values
+
 
 
 class SearchConfigRegistry:
@@ -268,3 +270,19 @@ class SearchConfig(MutableConfig):
                 piece,
             )
         )
+
+
+@dataclass
+class SearchConfigRegistryClientProps:
+    registry: SearchConfigRegistry
+    default_group_name: str = 'global'
+    fallback_to_gloabl_defaults: bool = True
+
+
+class SearchConfigRegistryClient:
+
+    def __init__(self, props: SearchConfigRegistryClientProps):
+        self.props = props
+
+    def get(self, config_name: str) -> SearchConfig:
+        pass
