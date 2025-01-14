@@ -248,17 +248,61 @@ def test_searches_configs_search_config_registry_add_aliases_and_defaults(dummy_
         'SomeItem': ['DefaultConfig']
     }
     search_registry.add_aliases(aliases)
-    assert search_registry.aliases.as_dict() == {
-        ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2'],
+        },
     }
     search_registry.add_defaults(defaults)
-    assert search_registry.defaults.as_dict() == {
-        ('SomeItem',): ['DefaultConfig']
+    assert search_registry.defaults_to_dict() == {
+        'global': {
+            ('SomeItem',): ['DefaultConfig'],
+        },
     }
     search_registry.add_aliases({('AnotherAlias', 'Multkey', 'AndSorted'): ['XYZ']})
-    assert search_registry.aliases.as_dict() == {
-        ('AndSorted', 'AnotherAlias', 'Multkey'): ['XYZ'],
-        ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('AndSorted', 'AnotherAlias', 'Multkey'): ['XYZ'],
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2'],
+        },
+    }
+
+
+def test_searches_configs_search_config_registry_add_defaults_by_group(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    config = search_registry.get('TestingSearchSchema')
+    aliases = {
+        'SomeAlias': ['AliasesItem1', 'AliasesItem2']
+    }
+    defaults = {
+        'SomeItem': ['DefaultConfig']
+    }
+    search_registry.add_aliases(aliases)
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+    }
+    search_registry.add_defaults(defaults)
+    assert search_registry.defaults_to_dict() == {
+        'global': {
+            ('SomeItem',): ['DefaultConfig'],
+        },
+    }
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchemaForReports': ['TestingDownload']
+        },
+        group='report',
+    )
+    assert search_registry.defaults_to_dict() == {
+        'global': {
+            ('SomeItem',): ['DefaultConfig']
+        },
+        'report': {
+            ('TestingSearchSchemaForReports',): ['TestingDownload']
+        }
     }
 
 

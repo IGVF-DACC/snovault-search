@@ -98,6 +98,12 @@ def flatten_single_values(values):
     return values
 
 
+def groups_to_dict(defaults):
+    return {
+        k: v.as_dict()
+        for k, v in defaults.items()
+    }
+
 
 class SearchConfigRegistry:
 
@@ -106,19 +112,23 @@ class SearchConfigRegistry:
 
     def _initialize_storage(self):
         self.registry = SortedTupleMap()
-        self.aliases = SortedTupleMap()
-        self.defaults = SortedTupleMap()
+        self.aliases = {'global': SortedTupleMap()}
+        self.defaults = {'global': SortedTupleMap()}
 
     def add(self, config):
         self.registry[config.name] = config
 
-    def add_aliases(self, aliases):
+    def add_aliases(self, aliases, group='global'):
+        if group not in self.aliases:
+            self.aliases[group] = SortedTupleMap()
         for k, v in aliases.items():
-            self.aliases[k] = v
+            self.aliases[group][k] = v
 
-    def add_defaults(self, defaults):
+    def add_defaults(self, defaults, group='global'):
+        if group not in self.defaults:
+            self.defaults[group] = SortedTupleMap()
         for k, v in defaults.items():
-            self.defaults[k] = v
+            self.defaults[group][k] = v
 
     def update(self, config):
         if config.name in self.registry:
@@ -147,28 +157,30 @@ class SearchConfigRegistry:
     def get(self, name, default=None):
         return self.registry.get(name, default)
 
-    def _resolve_config_name(self, name, use_defaults=True):
-        if name in self.aliases:
+    def _resolve_config_name(self, name, group='global', use_defaults=True):
+        if name in self.aliases.get(group, {}):
             yield from self._resolve_config_names(
-                self.aliases[name],
+                self.aliases[group][name],
+                group=group,
                 use_defaults=use_defaults
             )
-        elif use_defaults and name in self.defaults:
+        elif use_defaults and name in self.defaults.get(group, {}):
             yield from self._resolve_config_names(
-                self.defaults[name],
-                use_defaults=use_defaults
+                self.defaults[group][name],
+                group=group,
+                use_defaults=False,
             )
         else:
             yield name
 
-    def _resolve_config_names(self, names, use_defaults=True):
+    def _resolve_config_names(self, names, group='global', use_defaults=True):
         config_names = []
         for name in names:
-            config_names.extend(self._resolve_config_name(name, use_defaults=use_defaults))
+            config_names.extend(self._resolve_config_name(name, group=group, use_defaults=use_defaults))
         return config_names
 
-    def get_configs_by_names(self, names, use_defaults=True):
-        config_names = self._resolve_config_names(names, use_defaults=use_defaults)
+    def get_configs_by_names(self, names, group='global', use_defaults=True):
+        config_names = self._resolve_config_names(names, group=group, use_defaults=use_defaults)
         configs = (
             self.get(config_name)
             for config_name in config_names
@@ -179,11 +191,22 @@ class SearchConfigRegistry:
             if config
         ]
 
+    def defaults_to_dict(self):
+        return groups_to_dict(
+            self.defaults
+        )
+
+    def aliases_to_dict(self):
+        return groups_to_dict(
+            self.aliases
+        )
+
     def as_dict(self):
         return {
             flatten_single_values(name): dict(config.items())
             for name, config in self.registry.as_dict().items()
         }
+
 
 
 class MutableConfig(Config):
