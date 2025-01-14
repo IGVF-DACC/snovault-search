@@ -268,10 +268,9 @@ def test_searches_configs_search_config_registry_add_aliases_and_defaults(dummy_
     }
 
 
-def test_searches_configs_search_config_registry_add_defaults_by_group(dummy_request):
+def test_searches_configs_search_config_registry_add_defaults_and_aliases_by_group(dummy_request):
     from snosearch.interfaces import SEARCH_CONFIG
     search_registry = dummy_request.registry[SEARCH_CONFIG]
-    config = search_registry.get('TestingSearchSchema')
     aliases = {
         'SomeAlias': ['AliasesItem1', 'AliasesItem2']
     }
@@ -281,6 +280,25 @@ def test_searches_configs_search_config_registry_add_defaults_by_group(dummy_req
     search_registry.add_aliases(aliases)
     assert search_registry.aliases_to_dict() == {
         'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+    }
+    search_registry.add_aliases(aliases, group='report')
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+        'report': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+    }
+    search_registry.add_aliases({'AnotherAlias': ['ConcreteType']}, group='report')
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+        'report': {
+            ('AnotherAlias',): ['ConcreteType'],
             ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
         },
     }
