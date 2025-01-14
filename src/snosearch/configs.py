@@ -4,6 +4,9 @@ from .defaults import DEFAULT_TERMS_AGGREGATION_KWARGS
 from .defaults import DEFAULT_EXISTS_AGGREGATION_KWARGS
 from .interfaces import SEARCH_CONFIG
 
+from typing import List
+from typing import Union
+
 
 class Config(Mapping):
     '''
@@ -304,8 +307,8 @@ class SearchConfig(MutableConfig):
 @dataclass
 class SearchConfigRegistryClientProps:
     registry: SearchConfigRegistry
-    default_group_name: str = 'global'
-    fallback_to_gloabl_defaults: bool = True
+    group: str = 'global'
+    use_defaults: bool = True
 
 
 class SearchConfigRegistryClient:
@@ -313,5 +316,11 @@ class SearchConfigRegistryClient:
     def __init__(self, props: SearchConfigRegistryClientProps):
         self.props = props
 
-    def get(self, config_name: str) -> SearchConfig:
-        pass
+    def get(self, value: Union[List[str], str]) -> List[SearchConfig]:
+        if not isinstance(value, list):
+            value = [value]
+        return self.props.registry.get_configs_by_names(
+            value,
+            group=self.props.group,
+            use_defaults=self.props.use_defaults,
+        )

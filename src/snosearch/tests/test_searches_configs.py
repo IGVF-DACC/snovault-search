@@ -731,3 +731,45 @@ def test_searches_configs_search_config_registry_register_pieces_from_item():
     assert len(registry.registry.as_dict()) == 0
     registry.register_pieces_from_item(TypeWithNoPieces)
     assert len(registry.registry.as_dict()) == 0
+
+
+def test_searches_configs_search_config_registry_client_initializes(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    from snosearch.configs import SearchConfigRegistryClientProps
+    from snosearch.configs import SearchConfigRegistryClient
+    from snosearch.configs import SearchConfig
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    registry = search_registry.registry
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestConfigItem', 'TestingDownload'],
+        },
+        group='report'
+    )
+    global_client = SearchConfigRegistryClient(
+        props=SearchConfigRegistryClientProps(
+            registry=search_registry,
+            group='global',
+        )
+    )
+    report_client = SearchConfigRegistryClient(
+        props=SearchConfigRegistryClientProps(
+            registry=search_registry,
+            group='report',
+        )
+    )
+    assert isinstance(global_client, SearchConfigRegistryClient)
+    assert isinstance(report_client, SearchConfigRegistryClient)
+    configs = global_client.get('TestingSearchSchema')
+    assert len(configs) == 1
+    config = configs[0]
+    assert isinstance(config, SearchConfig)
+    assert config.name == 'TestingSearchSchema'
+    configs = report_client.get('TestingSearchSchema')
+    assert len(configs) == 2
+    assert isinstance(configs[0], SearchConfig)
+    assert configs[0].name == 'TestConfigItem'
+    assert configs[1].name == 'TestingDownload'
+    assert 'attachment' in configs[1].columns
+    search_registry.clear()
+    search_registry.registry = registry
