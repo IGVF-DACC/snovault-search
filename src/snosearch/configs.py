@@ -118,12 +118,18 @@ class SearchConfigRegistry:
     def add(self, config):
         self.registry[config.name] = config
 
+    # Add aliases for mapping random (nonexistant) config name to concrete config(s).
     def add_aliases(self, aliases, group='global'):
         if group not in self.aliases:
             self.aliases[group] = SortedTupleMap()
         for k, v in aliases.items():
+            if k in self.registry:
+                raise ValueError(
+                    f'Alias name {k} conflicts with existing concrete search config. Use different name. {self.as_dict()}'
+                )
             self.aliases[group][k] = v
 
+    # Add defaults for mapping existing concrete config names to other config(s).
     def add_defaults(self, defaults, group='global'):
         if group not in self.defaults:
             self.defaults[group] = SortedTupleMap()

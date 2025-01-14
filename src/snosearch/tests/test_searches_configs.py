@@ -362,6 +362,62 @@ def test_searches_configs_search_config_registry_resolve_config_names(dummy_requ
     search_registry.registry = registry
 
 
+def test_searches_configs_search_config_registry_resolve_config_names_by_group(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    registry = search_registry.registry
+    config_names = search_registry._resolve_config_names(['TestingSearchSchema'], group='report')
+    assert len(config_names) == 1
+    assert config_names == ['TestingSearchSchema']
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestConfigItem'],
+        },
+        group='report'
+    )
+    config_names = search_registry._resolve_config_names(['TestingSearchSchema'], group='report')
+    assert len(config_names) == 1
+    assert config_names == ['TestConfigItem']
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestConfigItem', 'TestingPostPutPatch'],
+        },
+        group='report'
+    )
+    config_names = search_registry._resolve_config_names(['TestingSearchSchema'], group='report')
+    assert len(config_names) == 2
+    assert config_names == ['TestConfigItem', 'TestingPostPutPatch']
+    search_registry.add_aliases(
+        {
+            'AllConfigs': ['TestingSearchSchema']
+        },
+        group='report',
+    )
+    config_names = search_registry._resolve_config_names(['AllConfigs'], group='report')
+    assert len(config_names) == 2
+    assert config_names == ['TestConfigItem', 'TestingPostPutPatch']
+    # Resolves to concrete self.
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestingSearchSchema', 'TestConfigItem', 'TestingPostPutPatch'],
+        },
+        group='report'
+    )
+    config_names = search_registry._resolve_config_names(['AllConfigs'], group='report')
+    assert len(config_names) == 3
+    assert config_names == ['TestingSearchSchema', 'TestConfigItem', 'TestingPostPutPatch']
+    with pytest.raises(ValueError):
+        # Can't add aliass with same name as concrete config.
+        search_registry.add_aliases(
+            {
+                'TestingSearchSchema': ['TestingSearchSchema', 'TestingSearchSchema']
+            },
+            group='report',
+        )
+    search_registry.clear()
+    search_registry.registry = registry
+
+
 def test_searches_configs_search_config_registry_get_configs_by_names(dummy_request):
     from snosearch.interfaces import SEARCH_CONFIG
     search_registry = dummy_request.registry[SEARCH_CONFIG]
