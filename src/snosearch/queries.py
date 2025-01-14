@@ -144,20 +144,18 @@ class AbstractQueryFactory:
     def _get_schema_for_item_type(self, item_type):
         return self._get_registered_types()[item_type].schema
 
-    def _get_search_config_for_item_type(self, item_type):
-        configs = self._get_search_config_registry().get_configs_by_names(
-            [
-                item_type
-            ]
-        )
-        if configs:
-            return configs[0]
-        return {}
-
     def _get_search_configs_by_names(self, names, use_defaults=True):
         return self._get_search_config_registry().get_configs_by_names(
             names,
             use_defaults=use_defaults
+        )
+
+    def _get_search_configs_for_item_type(self, item_type):
+        return self._get_search_configs_by_names(
+            [
+                item_type
+            ],
+            use_defaults=True,
         )
 
     def _get_subtypes_for_item_type(self, item_type):
@@ -256,7 +254,11 @@ class AbstractQueryFactory:
         }
 
     def _get_columns_for_item_type(self, item_type):
-        return self._get_search_config_for_item_type(item_type).get(COLUMNS, {})
+        return self._extract_columns_from_configs(
+            self._get_search_configs_for_item_type(
+                item_type
+            )
+        )
 
     def _get_columns_for_item_types(self, item_types=None):
         columns = self._get_base_columns()
