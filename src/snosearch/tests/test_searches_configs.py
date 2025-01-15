@@ -268,6 +268,36 @@ def test_searches_configs_search_config_registry_add_aliases_and_defaults(dummy_
     }
 
 
+def test_searches_configs_search_config_registry_add_aliases_and_defaults_to_json(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    registry = search_registry.registry
+    aliases = {
+        'SomeAlias': ['AliasesItem1', 'AliasesItem2'],
+        ('Another', 'Alias'): ['A', 'B', 'C'],
+    }
+    defaults = {
+        'SomeItem': ['DefaultConfig'],
+        'MoreDefaults': ['1', '2', '3'],
+    }
+    search_registry.add_aliases(aliases)
+    assert search_registry.aliases_to_json() == {
+        'global': {
+            "('Alias', 'Another')": ['A', 'B', 'C'],
+            "('SomeAlias',)": ['AliasesItem1', 'AliasesItem2']
+        }
+    }
+    search_registry.add_defaults(defaults)
+    assert search_registry.defaults_to_json() == {
+        'global': {
+            "('MoreDefaults',)": ['1', '2', '3'],
+            "('SomeItem',)": ['DefaultConfig']
+        }
+    }
+    search_registry.clear()
+    search_registry.registry = registry
+
+
 def test_searches_configs_search_config_registry_add_defaults_and_aliases_by_group(dummy_request):
     from snosearch.interfaces import SEARCH_CONFIG
     search_registry = dummy_request.registry[SEARCH_CONFIG]

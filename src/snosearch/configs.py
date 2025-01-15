@@ -108,6 +108,15 @@ def groups_to_dict(defaults):
     }
 
 
+def stringify(values):
+    if isinstance(values, dict):
+        return {
+            str(k): stringify(v)
+            for k, v in values.items()
+        }
+    return values
+
+
 class SearchConfigRegistry:
 
     def __init__(self):
@@ -208,6 +217,16 @@ class SearchConfigRegistry:
     def aliases_to_dict(self):
         return groups_to_dict(
             self.aliases
+        )
+
+    def defaults_to_json(self):
+        return stringify(
+            self.defaults_to_dict()
+        )
+
+    def aliases_to_json(self):
+        return stringify(
+            self.aliases_to_dict()
         )
 
     def as_dict(self):
