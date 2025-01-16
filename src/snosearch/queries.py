@@ -50,6 +50,7 @@ from .interfaces import EMBEDDED_TYPE
 from .interfaces import EXCLUDE
 from .interfaces import EXISTS
 from .interfaces import FACETS
+from .interfaces import FIELD_KEY
 from .interfaces import FILTERS
 from .interfaces import FROM_KEY
 from .interfaces import GROUP_BY
@@ -320,8 +321,12 @@ class AbstractQueryFactory:
     def _get_not_keys_for_facet_filter_context(self, facet_name, facet_options):
         aggregation_type = facet_options.get(TYPE_KEY)
         if aggregation_type == HIERARCHICAL:
-            subfacets = facet_options.get(SUBFACETS, [])
-            return [facet_name] + self._get_fields_from_subfacets(subfacets)
+            return [facet_name] + self._get_fields_from_subfacets(
+                facet_options.get(
+                    SUBFACETS,
+                    []
+                )
+            )
         return [facet_name]
 
     def _escape_regex_slashes(self, query):
@@ -783,16 +788,20 @@ class AbstractQueryFactory:
             field=field
         )
 
-    def _make_hierarchichal_aggregation(self, field, **kwargs):
-        subfacets = kwargs.get(SUBFACETS, [])
-        subfields = self._get_fields_from_subfacets(subfacets)
-        top_level_agg == self._make_terms_aggregation(field, **kwargs)
-        agg = top_level_agg
+    def _make_hierarchical_aggregation(self, field, **kwargs):
+        subfields = self._get_fields_from_subfacets(
+            kwargs.get(SUBFACETS, [])
+        )
+        hierarchical_agg = self._make_terms_aggregation(field, **kwargs)
+        agg = hierarchical_agg
         for subfield in subfields:
-            subagg = self._make_terms_aggregation(subfield, **kwargs)
+            subagg = self._make_terms_aggregation(
+                self._map_param_to_elasticsearch_field(subfield),
+                **kwargs
+            )
             agg.bucket(subfield, subagg)
             agg = subagg
-        return top_level_agg
+        return hierarchical_agg
 
     def _make_filter_aggregation(self, filter_context, **kwargs):
         return A(
@@ -846,7 +855,7 @@ class AbstractQueryFactory:
         elif aggregation_type == STATS:
             return self._make_stats_aggregation
         elif aggregation_type == HIERARCHICAL:
-            return self._make_hierarchichal_aggregation
+            return self._make_hierarchical_aggregation
         return self._make_terms_aggregation
 
     def _add_must_equal_terms_filter(self, field, terms):

@@ -3153,6 +3153,56 @@ def test_searches_queries_abstract_query_factory_make_stats_aggregation(params_p
     }
 
 
+@pytest.mark.parametrize(
+    'params_parser',
+    integrations,
+    indirect=True
+)
+def test_searches_queries_abstract_query_factory_make_hierarchical_aggregation(params_parser):
+    from snosearch.queries import AbstractQueryFactory
+    aq = AbstractQueryFactory(params_parser)
+    ta= aq._make_hierarchical_aggregation(
+        field='embedded.lab.@id',
+        exclude=['other lab'],
+        size=14,
+        subfacets=[
+            {
+                'field': 'status',
+                'title': 'Status'
+            },
+            {
+                'field': 'assay_term.term_name',
+                'title': 'Assay term name'
+            },
+        ]
+    )
+    assert ta.to_dict() == {
+        'terms': {
+            'field': 'embedded.lab.@id',
+            'exclude': ['other lab'],
+            'size': 14
+        },
+        'aggs': {
+            'status': {
+                'terms': {
+                    'field': 'embedded.status',
+                    'exclude': ['other lab'],
+                    'size': 14
+                },
+                'aggs': {
+                    'assay_term.term_name': {
+                        'terms': {
+                            'field': 'embedded.assay_term.term_name',
+                            'exclude': ['other lab'],
+                            'size': 14
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
 def test_searches_queries_abstract_query_factory_map_param_to_elasticsearch_field():
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory({})
