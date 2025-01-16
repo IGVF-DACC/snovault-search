@@ -4653,6 +4653,8 @@ def test_searches_queries_abstract_query_factory_subaggregation_factory(params_p
     assert isinstance(sa, Terms)
     sa = aq._subaggregation_factory('stats')(field='')
     assert isinstance(sa, Stats)
+    sa = aq._subaggregation_factory('hierarchical')(field='')
+    assert isinstance(sa, Terms)
 
 
 @pytest.mark.parametrize(
