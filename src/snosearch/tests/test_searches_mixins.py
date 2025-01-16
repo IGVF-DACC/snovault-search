@@ -148,6 +148,29 @@ def raw_snowflakes_query():
                         }
                     }
                 }
+            },
+            'Sample classifications':{
+                'filter': {
+                    'bool': {
+                        'must': [
+                             {'terms': {'embedded.@type': ['Snowflake']}}
+                        ]
+                    }
+                },
+                'aggs': {
+                    'samples-classifications': {
+                        'terms': {
+                            'field': 'embedded.samples.classifications'
+                        },
+                        'aggs': {
+                            'samples-sample_terms-term_name': {
+                                'terms': {
+                                    'field': 'embedded.samples.sample_terms.term_name'
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         'query': {
@@ -570,6 +593,97 @@ def raw_response():
                         'sum': 586519624274
                     }
                 },
+                'Sample classifications': {
+                    'doc_count': 27,
+                    'samples-classifications': {
+                        'doc_count_error_upper_bound': 0,
+                        'sum_other_doc_count': 0,
+                        'buckets': [
+                            {
+                                'key': 'primary cell',
+                                'doc_count': 14,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'motor neuron',
+                                            'doc_count': 14
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'multiplexed sample',
+                                'doc_count': 6,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0, 'buckets': [
+                                        {
+                                            'key': 'motor neuron',
+                                            'doc_count': 6
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'cell line',
+                                'doc_count': 3,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'motor neuron',
+                                            'doc_count': 3
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'whole organism',
+                                'doc_count': 2,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'whole organism',
+                                            'doc_count': 2
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'technical sample',
+                                'doc_count': 1,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'technical sample',
+                                            'doc_count': 1
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'tissue', 'doc_count': 1,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'lung',
+                                            'doc_count': 1
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
             }
         }
     }

@@ -3203,7 +3203,7 @@ def test_searches_queries_abstract_query_factory_make_hierarchical_aggregation(p
                     'size': 14
                 },
                 'aggs': {
-                    'assay_term.term_name': {
+                    'assay_term-term_name': {
                         'terms': {
                             'field': 'embedded.assay_term.term_name',
                             'exclude': ['other lab'],

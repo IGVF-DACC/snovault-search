@@ -799,7 +799,7 @@ class AbstractQueryFactory:
                 self._map_param_to_elasticsearch_field(subfield),
                 **kwargs
             )
-            agg.bucket(subfield, subagg)
+            agg.bucket(subfield.replace(PERIOD, DASH), subagg)
             agg = subagg
         return hierarchical_agg
 
