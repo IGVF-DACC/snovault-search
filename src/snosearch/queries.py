@@ -54,6 +54,7 @@ from .interfaces import FILTERS
 from .interfaces import FROM_KEY
 from .interfaces import GROUP_BY
 from .interfaces import GROUP_SUBMITTER
+from .interfaces import HIERARCHICAL
 from .interfaces import ITEM
 from .interfaces import LIMIT_KEY
 from .interfaces import LENGTH
@@ -83,6 +84,7 @@ from .interfaces import SEARCH_CONFIG
 from .interfaces import SIMPLE_QUERY_STRING
 from .interfaces import _SOURCE
 from .interfaces import STATS
+from .interfaces import SUBFACETS
 from .interfaces import TITLE
 from .interfaces import TERMS
 from .interfaces import TOP_HITS
@@ -307,6 +309,20 @@ class AbstractQueryFactory:
             for item_type in item_types
             if self._get_collection_name_for_item_type(item_type)
         ]
+
+    def _get_fields_from_subfacets(self, subfacets):
+        return [
+            subfacet.get(FIELD_KEY)
+            for subfacet in subfacets
+            if subfacet.get(FIELD_KEY)
+        ]
+
+    def _get_not_keys_for_facet_filter_context(self, facet_name, facet_options):
+        aggregation_type = facet_options.get(TYPE_KEY)
+        if aggregation_type == HIERARCHICAL:
+            subfacets = facet_options.get(SUBFACETS, [])
+            return [facet_name] + self._get_fields_from_subfacets(subfacets)
+        return [facet_name]
 
     def _escape_regex_slashes(self, query):
         return query.replace('/', '\\/')
@@ -767,6 +783,17 @@ class AbstractQueryFactory:
             field=field
         )
 
+    def _make_hierarchichal_aggregation(self, field, **kwargs):
+        subfacets = kwargs.get(SUBFACETS, [])
+        subfields = self._get_fields_from_subfacets(subfacets)
+        top_level_agg == self._make_terms_aggregation(field, **kwargs)
+        agg = top_level_agg
+        for subfield in subfields:
+            subagg = self._make_terms_aggregation(subfield, **kwargs)
+            agg.bucket(subfield, subagg)
+            agg = subagg
+        return top_level_agg
+
     def _make_filter_aggregation(self, filter_context, **kwargs):
         return A(
             'filter',
@@ -818,6 +845,8 @@ class AbstractQueryFactory:
             return self._make_exists_aggregation
         elif aggregation_type == STATS:
             return self._make_stats_aggregation
+        elif aggregation_type == HIERARCHICAL:
+            return self._make_hierarchichal_aggregation
         return self._make_terms_aggregation
 
     def _add_must_equal_terms_filter(self, field, terms):
@@ -975,6 +1004,7 @@ class AbstractQueryFactory:
                 )
         )
 
+
     def add_aggregations_and_aggregation_filters(self):
         '''
         Each aggregation is computed in a filter context that filters
@@ -983,7 +1013,10 @@ class AbstractQueryFactory:
         params = self._get_post_filters()
         for facet_name, facet_options in self._get_facets():
             filtered_params = self.params_parser.get_not_keys_filters(
-                not_keys=[facet_name],
+                not_keys=self._get_not_keys_for_facet_filter_context(
+                    facet_name,
+                    facet_options,
+                ),
                 params=params
             )
             must, must_not, exists, not_exists, ranges, not_ranges = self._make_split_filter_queries(
@@ -996,7 +1029,8 @@ class AbstractQueryFactory:
                 field=self._map_param_to_elasticsearch_field(facet_name),
                 exclude=facet_options.get(EXCLUDE),
                 # TODO: size should be defined in schema instead of long keyword.
-                size=3000 if facet_options.get(LENGTH) == LONG else 200
+                size=3000 if facet_options.get(LENGTH) == LONG else 200,
+                subfacets=facet_options.get(SUBFACETS, []),
             )
             agg = self._make_filter_and_subaggregation(
                 title=facet_name.replace(PERIOD, DASH),
