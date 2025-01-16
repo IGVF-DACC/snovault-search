@@ -517,6 +517,16 @@ def test_searches_configs_search_config_registry_as_dict(dummy_request):
                 },
                 'name': {
                     'title': 'Name'
+                },
+                'samples.classifications': {
+                    'title': 'Sample classification',
+                    'type': 'hierarchical',
+                    'subfacets': [
+                        {
+                            'field': 'samples.term_name',
+                            'title': 'Sample term name',
+                        }
+                    ]
                 }
             },
             'boost_values': {

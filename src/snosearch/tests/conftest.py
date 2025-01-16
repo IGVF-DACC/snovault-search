@@ -306,6 +306,16 @@ def testing_search_schema_special_facets_type():
                 },
                 'name': {
                     'title': 'Name'
+                },
+                'samples.classifications': {
+                    'title': 'Sample classification',
+                    'type': 'hierarchical',
+                    'subfacets': [
+                        {
+                            'field': 'samples.term_name',
+                            'title': 'Sample term name',
+                        }
+                    ]
                 }
             },
             'boost_values': {
