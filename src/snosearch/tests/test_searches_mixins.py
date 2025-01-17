@@ -15,6 +15,18 @@ def snowflakes_facets():
                 ('lab.title', {'title': 'Lab', 'open_on_load': False}),
                 ('file_size', {'title': 'File size statistics', 'type': 'stats'}),
                 ('restricted', {'title': 'File is restricted', 'type': 'exists'}),
+                (
+                    'samples.classifications', {
+                        'title': 'Sample classifications',
+                        'type': 'hierarchical',
+                        'subfacets': [
+                            {
+                                'field': 'samples.sample_terms.term_name',
+                                'title': 'Sample term name',
+                            }
+                        ]
+                    }
+                ),
         ]
     }
 
@@ -618,7 +630,8 @@ def raw_response():
                                 'doc_count': 6,
                                 'samples-sample_terms-term_name': {
                                     'doc_count_error_upper_bound': 0,
-                                    'sum_other_doc_count': 0, 'buckets': [
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
                                         {
                                             'key': 'motor neuron',
                                             'doc_count': 6
@@ -1615,6 +1628,308 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_aggregation_bucket_to_list(r
     assert len(actual) == len(expected)
 
 
+def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response):
+    from snosearch.mixins import AggsToFacetsMixin
+    afm = AggsToFacetsMixin()
+    expected = [
+        {
+            'key': 'primary cell',
+            'doc_count': 14,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 14}
+                ]
+            }
+        },
+        {
+            'key': 'multiplexed sample',
+            'doc_count': 6,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 6}
+                ]
+            }
+        },
+        {
+            'key': 'cell line',
+            'doc_count': 3,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 3}
+                ]
+            }
+        },
+        {
+            'key': 'whole organism',
+            'doc_count': 2,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'whole organism', 'doc_count': 2}
+                ]
+            }
+        },
+        {
+            'key': 'technical sample',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'technical sample', 'doc_count': 1}
+                ]
+            }
+        },
+        {
+            'key': 'tissue',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'lung', 'doc_count': 1}
+                ]
+            }
+        }
+    ]
+    actual = afm._parse_subfacet_bucket(
+        raw_response['hits']['aggregations']['Sample classifications']['samples-classifications']['buckets'],
+        [
+            {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+            }
+        ]
+    )
+    assert all([e in actual for e in expected])
+    assert len(actual) == len(expected)
+
+
+def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket_custom_data():
+    from snosearch.mixins import AggsToFacetsMixin
+    raw_agg = {'lab': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': '/labs/danwei-huangfu/', 'doc_count': 14, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 3, 'buckets': [{'key': '10x multiome', 'doc_count': 2, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 2}]}}, {'key': '10x multiome with MULTI-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Cell painting', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Hi-C', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'MPRA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'MPRA (scQer)', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'RNA-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'electroporated MPRA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'lentiMPRA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'scRNA-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/ali-mortazavi/', 'doc_count': 4, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'ONT Fiber-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'ONT dRNA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'ONT direct WGS', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Parse SPLiT-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/christina-leslie/', 'doc_count': 2, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'STARR-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Spatial transcriptomics', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/lea-starita/', 'doc_count': 2, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'VAMP-seq (MultiSTEP)', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Variant painting via fluorescence', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/tim-reddy/', 'doc_count': 2, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'CERES-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'SUPERSTARR', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/j-michael-cherry/', 'doc_count': 1, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'SUPERSTARR', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/jesse-engreitz/', 'doc_count': 1, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'Variant-EFFECTS', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/lior-pachter/', 'doc_count': 1, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'SHARE-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}]}}
+    afm = AggsToFacetsMixin()
+    expected = [
+        {
+            'key': '/labs/danwei-huangfu/',
+            'doc_count': 14,
+            'subfacet': {
+                'field':
+                'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': '10x multiome',
+                        'doc_count': 2,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 2}
+                            ]
+                        }
+                    },
+                    {
+                        'key': '10x multiome with MULTI-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'Cell painting',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'Hi-C',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'MPRA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'MPRA (scQer)',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'RNA-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'electroporated MPRA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'lentiMPRA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                     },
+                    {
+                        'key': 'scRNA-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            'key': '/labs/ali-mortazavi/',
+            'doc_count': 2,
+            'subfacet': {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': 'ONT Fiber-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'ONT dRNA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            'key': '/labs/christina-leslie/',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': 'STARR-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            'key': '/labs/j-michael-cherry/',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': 'SUPERSTARR',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+    actual = afm._parse_subfacet_bucket(
+        raw_agg['lab']['buckets'],
+        [
+            {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+            },
+            {
+                'field': 'status',
+                'title': 'Status',
+            }
+        ]
+    )
+    assert len(actual[0]['subfacet']['terms']) == 10
+    assert len(actual[0]['subfacet']['terms'][0]['subfacet']['terms']) == 1
+
+
 def test_searches_mixins_aggs_to_facets_mixin_get_aggregation_result(
         basic_query_response_with_facets,
         mocker,
@@ -1685,6 +2000,88 @@ def test_searches_mixins_aggs_to_facets_mixin_get_aggregation_bucket(
         {'key': 'J. Michael Cherry, Stanford', 'doc_count': 35}
     ]
     actual = basic_query_response_with_facets._get_aggregation_bucket('lab.title')
+    assert all([e in actual for e in expected])
+    assert len(expected) == len(actual)
+
+
+def test_searches_mixins_aggs_to_facets_mixin_get_hierarchical_aggregation_bucket(
+        basic_query_response_with_facets,
+        mocker,
+        snowflakes_facets
+):
+    from snosearch.mixins import AggsToFacetsMixin
+    mocker.patch.object(AggsToFacetsMixin, '_get_facets')
+    AggsToFacetsMixin._get_facets.return_value = snowflakes_facets
+    expected = [
+        {
+            'key': 'primary cell',
+            'doc_count': 14,
+            'subfacet': {
+                'field':
+                'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 14}
+                ]
+            }
+        },
+        {
+            'key': 'multiplexed sample',
+            'doc_count': 6,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 6}
+                ]
+            }
+        },
+        {
+            'key': 'cell line',
+            'doc_count': 3,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 3}
+                ]
+            }
+        },
+        {
+            'key': 'whole organism',
+            'doc_count': 2,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'whole organism', 'doc_count': 2}
+                ]
+            }
+        },
+        {
+            'key': 'technical sample',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'technical sample', 'doc_count': 1}
+                ]
+            }
+        },
+        {
+            'key': 'tissue',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'lung', 'doc_count': 1}
+                ]
+            }
+        }
+    ]
+    actual = basic_query_response_with_facets._get_hierarchical_aggregation_bucket('samples.classifications')
     assert all([e in actual for e in expected])
     assert len(expected) == len(actual)
 
@@ -1856,6 +2253,83 @@ def test_searches_mixins_aggs_to_facets_mixin_format_aggregations(
             'type': 'exists',
             'appended': False,
             'open_on_load': False
+        },
+        {
+            'field': 'samples.classifications',
+            'title': 'Sample classifications',
+            'terms': [
+                {
+                    'key': 'primary cell',
+                    'doc_count': 14,
+                    'subfacet': {
+                        'field':
+                        'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'motor neuron', 'doc_count': 14}
+                        ]
+                    }
+                },
+                {
+                    'key': 'multiplexed sample',
+                    'doc_count': 6,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'motor neuron', 'doc_count': 6}
+                        ]
+                    }
+                },
+                {
+                    'key': 'cell line',
+                    'doc_count': 3,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'motor neuron', 'doc_count': 3}
+                        ]
+                    }
+                },
+                {
+                    'key': 'whole organism',
+                    'doc_count': 2,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'whole organism', 'doc_count': 2}
+                        ]
+                    }
+                },
+                {
+                    'key': 'technical sample',
+                    'doc_count': 1,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'technical sample', 'doc_count': 1}
+                        ]
+                    }
+                },
+                {
+                    'key': 'tissue',
+                    'doc_count': 1,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'lung', 'doc_count': 1}
+                        ]
+                    }
+                }
+            ],
+            'total': 27,
+            'type': 'hierarchical',
+            'appended': False,
+            'open_on_load': False
         }
     ]
     actual = basic_query_response_with_facets.facets
@@ -1993,7 +2467,7 @@ def test_searches_mixins_aggs_to_facets_mixin_to_facets(
     mocker.patch.object(AggsToFacetsMixin, '_get_facets')
     AggsToFacetsMixin._get_facets.return_value = snowflakes_facets
     actual = basic_query_response_with_facets.to_facets()
-    assert len(actual) == 14
+    assert len(actual) == 15
 
 
 def test_searches_mixins_hits_to_graph_mixin_init():
