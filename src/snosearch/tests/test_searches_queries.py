@@ -4987,7 +4987,65 @@ def test_searches_queries_basic_search_query_factory_add_aggregations_and_aggreg
                     }
                 }
             }
-        }
+        },
+        'Date created': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
+                }
+            },
+            'aggs': {
+                'date_created': {
+                    'date_histogram': {
+                        'field': 'embedded.date_created',
+                        'calendar_interval': 'week',
+                        'format': 'MM-dd-yyyy'
+                    }
+                }
+            }
+        },
+        'Quality metric': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
+                }
+            },
+            'aggs': {
+                'quality_metric': {
+                    'range': {
+                        'field': 'embedded.quality_metric',
+                        'ranges': [
+                            {'to': 100.0},
+                            {'from': 100.0, 'to': 1000.0},
+                            {'from': 1000.0, 'to': 2000.0},
+                            {'from': 2000.0}
+                        ]
+                    }
+                }
+            }
+        },
     }
     actual = bsqf.search.to_dict()
     assert all(
