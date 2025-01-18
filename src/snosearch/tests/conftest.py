@@ -316,6 +316,22 @@ def testing_search_schema_special_facets_type():
                             'title': 'Sample term name',
                         }
                     ]
+                },
+                'date_created': {
+                    'title': 'Date created',
+                    'type': 'date_histogram',
+                    'calendar_interval': 'week',
+                    'format': 'MM-dd-yyyy'
+                },
+                'quality_metric': {
+                    'title': 'Quality metric',
+                    'type': 'range',
+                    'ranges': [
+                        {'to': 100.0},
+                        {'from': 100.0, 'to': 1000.0},
+                        {'from': 1000.0, 'to': 2000.0},
+                        {'from': 2000.0},
+                    ]
                 }
             },
             'boost_values': {

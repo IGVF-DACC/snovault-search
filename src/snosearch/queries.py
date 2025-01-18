@@ -8,7 +8,9 @@ from lucenequery.prefixfields import prefixfields
 
 
 from .adapters.exceptions import get_default_exception
+from .configs import DateHistogramAggregationConfig
 from .configs import ExistsAggregationConfig
+from .configs import RangeAggregationConfig
 from .configs import TermsAggregationConfig
 from .configs import SearchConfigRegistryClient
 from .configs import SearchConfigRegistryClientProps
@@ -24,6 +26,8 @@ from .defaults import BASE_FIELD_FACETS
 from .defaults import BASE_RETURN_FIELDS
 from .defaults import BASE_SEARCH_FIELDS
 from .defaults import DEFAULT_COLUMNS
+from .defaults import DEFAULT_DATE_HISTOGRAM_CALENDAR_INTERVAL
+from .defaults import DEFAULT_DATE_HISTOGRAM_DATE_FORMAT
 from .defaults import DEFAULT_FRAMES
 from .defaults import DEFAULT_SCAN_SIZE
 from .defaults import DEFAULT_SORT
@@ -39,10 +43,12 @@ from .interfaces import ASC
 from .interfaces import AUDIT
 from .interfaces import BOOL
 from .interfaces import BOOST_VALUES
+from .interfaces import CALENDAR_INTERVAL
 from .interfaces import COLLECTION_NAME
 from .interfaces import COLON
 from .interfaces import COLUMNS
 from .interfaces import DASH
+from .interfaces import DATE_HISTOGRAM
 from .interfaces import DESC
 from .interfaces import ELASTIC_SEARCH
 from .interfaces import EMBEDDED
@@ -52,6 +58,7 @@ from .interfaces import EXISTS
 from .interfaces import FACETS
 from .interfaces import FIELD_KEY
 from .interfaces import FILTERS
+from .interfaces import FORMAT
 from .interfaces import FROM_KEY
 from .interfaces import GROUP_BY
 from .interfaces import GROUP_SUBMITTER
@@ -788,6 +795,20 @@ class AbstractQueryFactory:
             field=field
         )
 
+    def _make_date_histogram_aggregation(self, field, **kwargs):
+        return A(
+            DATE_HISTOGRAM,
+            field=field,
+            **DateHistogramAggregationConfig(**kwargs)
+        )
+
+    def _make_range_aggregation(self, field, **kwargs):
+        return A(
+            RANGE,
+            field=field,
+            **RangeAggregationConfig(**kwargs)
+        )
+
     def _make_hierarchical_aggregation(self, field, **kwargs):
         subfields = self._get_fields_from_subfacets(
             kwargs.get(SUBFACETS, [])
@@ -856,6 +877,10 @@ class AbstractQueryFactory:
             return self._make_stats_aggregation
         elif aggregation_type == HIERARCHICAL:
             return self._make_hierarchical_aggregation
+        elif aggregation_type == DATE_HISTOGRAM:
+            return self._make_date_histogram_aggregation
+        elif aggregation_type == RANGE:
+            return self._make_range_aggregation
         return self._make_terms_aggregation
 
     def _add_must_equal_terms_filter(self, field, terms):
@@ -1039,7 +1064,22 @@ class AbstractQueryFactory:
                 exclude=facet_options.get(EXCLUDE),
                 # TODO: size should be defined in schema instead of long keyword.
                 size=3000 if facet_options.get(LENGTH) == LONG else 200,
-                subfacets=facet_options.get(SUBFACETS, []),
+                subfacets=facet_options.get(
+                    SUBFACETS,
+                    []
+                ),
+                calendar_interval=facet_options.get(
+                    CALENDAR_INTERVAL,
+                    DEFAULT_DATE_HISTOGRAM_CALENDAR_INTERVAL,
+                ),
+                format=facet_options.get(
+                    FORMAT,
+                    DEFAULT_DATE_HISTOGRAM_DATE_FORMAT,
+                ),
+                ranges=facet_options.get(
+                    RANGES,
+                    []
+                )
             )
             agg = self._make_filter_and_subaggregation(
                 title=facet_name.replace(PERIOD, DASH),

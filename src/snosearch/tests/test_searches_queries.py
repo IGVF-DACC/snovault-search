@@ -406,7 +406,7 @@ def test_searches_queries_abstract_query_factory_get_collection_name_for_item_ty
     integrations,
     indirect=True
 )
-def test_searches_queries_abstract_query_factory_get_facets_from_configs(params_parser_snovault_types):
+def test_searches_queries_abstract_query_factory_more_get_facets_from_configs(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser_snovault_types)
     facets = aq._get_facets_from_configs()
@@ -1064,6 +1064,28 @@ def test_searches_queries_abstract_query_factory_get_facets_from_configs(dummy_r
                         'field': 'samples.term_name',
                         'title': 'Sample term name'
                     }
+                ]
+            }
+        ),
+        (
+            'date_created',
+            {
+                'title': 'Date created',
+                'type': 'date_histogram',
+                'calendar_interval': 'week',
+                'format': 'MM-dd-yyyy'
+            }
+        ),
+        (
+            'quality_metric',
+            {
+                'title': 'Quality metric',
+                'type': 'range',
+                'ranges': [
+                    {'to': 100.0},
+                    {'from': 100.0, 'to': 1000.0},
+                    {'from': 1000.0, 'to': 2000.0},
+                    {'from': 2000.0},
                 ]
             }
         )
@@ -4656,7 +4678,7 @@ def test_searches_queries_abstract_query_factory_add_exact_counting(params_parse
 )
 def test_searches_queries_abstract_query_factory_subaggregation_factory(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
-    from opensearch_dsl.aggs import Filters, Terms, Stats
+    from opensearch_dsl.aggs import Filters, Terms, Stats, DateHistogram, Range
     aq = AbstractQueryFactory(params_parser_snovault_types)
     sa = aq._subaggregation_factory('exists')(field='')
     assert isinstance(sa, Filters)
@@ -4668,6 +4690,10 @@ def test_searches_queries_abstract_query_factory_subaggregation_factory(params_p
     assert isinstance(sa, Stats)
     sa = aq._subaggregation_factory('hierarchical')(field='')
     assert isinstance(sa, Terms)
+    sa = aq._subaggregation_factory('date_histogram')(field='')
+    assert isinstance(sa, DateHistogram)
+    sa = aq._subaggregation_factory('range')(field='')
+    assert isinstance(sa, Range)
 
 
 @pytest.mark.parametrize(
