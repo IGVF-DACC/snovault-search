@@ -406,7 +406,7 @@ def test_searches_queries_abstract_query_factory_get_collection_name_for_item_ty
     integrations,
     indirect=True
 )
-def test_searches_queries_abstract_query_factory_get_facets_from_configs(params_parser_snovault_types):
+def test_searches_queries_abstract_query_factory_more_get_facets_from_configs(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser_snovault_types)
     facets = aq._get_facets_from_configs()
@@ -1053,7 +1053,42 @@ def test_searches_queries_abstract_query_factory_get_facets_from_configs(dummy_r
     assert facets == [
         ('status', {'title': 'Status', 'type': 'exists'}),
         ('read_count', {'title': 'Read count range', 'type': 'stats'}),
-        ('name', {'title': 'Name'})
+        ('name', {'title': 'Name'}),
+        (
+            'samples.classifications',
+            {
+                'title': 'Sample classification',
+                'type': 'hierarchical',
+                'subfacets': [
+                    {
+                        'field': 'samples.term_name',
+                        'title': 'Sample term name'
+                    }
+                ]
+            }
+        ),
+        (
+            'date_created',
+            {
+                'title': 'Date created',
+                'type': 'date_histogram',
+                'calendar_interval': 'week',
+                'format': 'MM-dd-yyyy'
+            }
+        ),
+        (
+            'quality_metric',
+            {
+                'title': 'Quality metric',
+                'type': 'range',
+                'ranges': [
+                    {'to': 100.0},
+                    {'from': 100.0, 'to': 1000.0},
+                    {'from': 1000.0, 'to': 2000.0},
+                    {'from': 2000.0},
+                ]
+            }
+        )
     ]
     dummy_request.environ['QUERY_STRING'] = (
         'query=chip-seq&query=rna&query!=ENCODE+2'
@@ -3153,6 +3188,56 @@ def test_searches_queries_abstract_query_factory_make_stats_aggregation(params_p
     }
 
 
+@pytest.mark.parametrize(
+    'params_parser',
+    integrations,
+    indirect=True
+)
+def test_searches_queries_abstract_query_factory_make_hierarchical_aggregation(params_parser):
+    from snosearch.queries import AbstractQueryFactory
+    aq = AbstractQueryFactory(params_parser)
+    ta= aq._make_hierarchical_aggregation(
+        field='embedded.lab.@id',
+        exclude=['other lab'],
+        size=14,
+        subfacets=[
+            {
+                'field': 'status',
+                'title': 'Status'
+            },
+            {
+                'field': 'assay_term.term_name',
+                'title': 'Assay term name'
+            },
+        ]
+    )
+    assert ta.to_dict() == {
+        'terms': {
+            'field': 'embedded.lab.@id',
+            'exclude': ['other lab'],
+            'size': 14
+        },
+        'aggs': {
+            'status': {
+                'terms': {
+                    'field': 'embedded.status',
+                    'exclude': ['other lab'],
+                    'size': 14
+                },
+                'aggs': {
+                    'assay_term-term_name': {
+                        'terms': {
+                            'field': 'embedded.assay_term.term_name',
+                            'exclude': ['other lab'],
+                            'size': 14
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
 def test_searches_queries_abstract_query_factory_map_param_to_elasticsearch_field():
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory({})
@@ -4593,7 +4678,7 @@ def test_searches_queries_abstract_query_factory_add_exact_counting(params_parse
 )
 def test_searches_queries_abstract_query_factory_subaggregation_factory(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
-    from opensearch_dsl.aggs import Filters, Terms, Stats
+    from opensearch_dsl.aggs import Filters, Terms, Stats, DateHistogram, Range
     aq = AbstractQueryFactory(params_parser_snovault_types)
     sa = aq._subaggregation_factory('exists')(field='')
     assert isinstance(sa, Filters)
@@ -4603,6 +4688,12 @@ def test_searches_queries_abstract_query_factory_subaggregation_factory(params_p
     assert isinstance(sa, Terms)
     sa = aq._subaggregation_factory('stats')(field='')
     assert isinstance(sa, Stats)
+    sa = aq._subaggregation_factory('hierarchical')(field='')
+    assert isinstance(sa, Terms)
+    sa = aq._subaggregation_factory('date_histogram')(field='')
+    assert isinstance(sa, DateHistogram)
+    sa = aq._subaggregation_factory('range')(field='')
+    assert isinstance(sa, Range)
 
 
 @pytest.mark.parametrize(
@@ -4745,8 +4836,8 @@ def test_searches_queries_basic_search_query_factory_add_aggregations_and_aggreg
     from snosearch.parsers import ParamsParser
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
-        'type=TestingSearchSchemaSpecialFacets&status=released&dbxref=*&replcate.biosample.title=cell'
-        '&read_count=gte:3000&size!=lt:555'
+        'type=TestingSearchSchemaSpecialFacets&status=released&dbxref=*&replicate.biosample.title=cell'
+        '&read_count=gte:3000&size!=lt:555&samples.classifications=primary%20cell&samples.term_name=motor%20neuron'
         '&limit=10'
     )
     dummy_request.context = DummyResource()
@@ -4754,123 +4845,214 @@ def test_searches_queries_basic_search_query_factory_add_aggregations_and_aggreg
     bsqf = BasicSearchQueryFactory(params_parser)
     bsqf.add_aggregations_and_aggregation_filters()
     partial_expected = {
-        'aggs': {
-            'Data Type': {
-                'filter': {
-                    'bool': {
-                        'must': [
-                            {'terms': {'embedded.status': ['released', 'archived']}},
-                            {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
-                            {'exists': {'field': 'embedded.dbxref'}},
-                            {'range': {'embedded.read_count': {'gte': '3000'}}}
-                        ],
-                        'must_not': [
-                            {'terms': {'embedded.lab.name': ['thermo']}},
-                            {'exists': {'field': 'embedded.restricted'}},
-                            {'range': {'embedded.size': {'lt': '555'}}}
-                        ]
-                    }
-                },
-                'aggs': {
-                    'type': {
-                        'terms': {
-                            'field': 'embedded.@type', 'exclude': ['Item'], 'size': 200
-                        }
-                    }
+        'Data Type': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
                 }
             },
-            'Status': {
-                'filter': {
-                    'bool': {
-                        'must': [
-                            {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
-                            {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
-                            {'exists': {'field': 'embedded.dbxref'}},
-                            {'range': {'embedded.read_count': {'gte': '3000'}}}
-                        ],
-                        'must_not': [
-                            {'terms': {'embedded.lab.name': ['thermo']}},
-                            {'exists': {'field': 'embedded.restricted'}},
-                            {'range': {'embedded.size': {'lt': '555'}}}
-                        ]
+            'aggs': {
+                'type': {
+                    'terms': {
+                        'field': 'embedded.@type',
+                        'exclude': ['Item'],
+                        'size': 200
                     }
-                },
-                'aggs': {
-                    'status': {
+                }
+            }
+        },
+        'Status': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
+                }
+            },
+            'aggs': {
+                'status': {
+                    'filters': {
                         'filters': {
-                            'filters': {
-                                'yes': {
-                                    'exists': {'field': 'embedded.status'}
-                                },
-                                'no': {
-                                    'bool': {
-                                        'must_not': [
-                                            {'exists': {'field': 'embedded.status'}}
-                                        ]
-                                    }
+                            'yes': {
+                                'exists': {
+                                    'field': 'embedded.status'
+                                }
+                            },
+                            'no': {
+                                'bool': {
+                                    'must_not': [
+                                        {'exists': {'field': 'embedded.status'}}
+                                    ]
                                 }
                             }
                         }
                     }
                 }
-            },
-            'Read count range': {
-                'filter': {
-                    'bool': {
-                        'must': [
-                            {'terms': {'embedded.status': ['released', 'archived']}},
-                            {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
-                            {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
-                            {'exists': {'field': 'embedded.dbxref'}}],
-                        'must_not': [
-                            {'terms': {'embedded.lab.name': ['thermo']}},
-                            {'exists': {'field': 'embedded.restricted'}},
-                            {'range': {'embedded.size': {'lt': '555'}}}
-                        ]
-                    }
-                },
-                'aggs': {
-                    'read_count': {
-                        'stats': {
-                            'field': 'embedded.read_count'
-                        }
-                    }
+            }
+        },
+        'Read count range': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}}],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
                 }
             },
-            'Name': {
-                'filter': {
-                    'bool': {
-                        'must': [
-                            {'terms': {'embedded.status': ['released', 'archived']}},
-                            {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
-                            {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
-                            {'exists': {'field': 'embedded.dbxref'}},
-                            {'range': {'embedded.read_count': {'gte': '3000'}}}
-                        ],
-                        'must_not': [
-                            {'terms': {'embedded.lab.name': ['thermo']}},
-                            {'exists': {'field': 'embedded.restricted'}},
-                            {'range': {'embedded.size': {'lt': '555'}}}]}},
-                'aggs': {
-                    'name': {
-                        'terms': {
-                            'field': 'embedded.name',
-                            'size': 200
+            'aggs': {
+                'read_count': {
+                    'stats': {
+                        'field': 'embedded.read_count'
+                    }
+                }
+            }
+        },
+        'Name': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
+                }
+            },
+            'aggs': {
+                'name': {
+                    'terms': {
+                        'field': 'embedded.name', 'size': 200
+                    }
+                }
+            }
+        },
+        'Sample classification': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
+                }
+            },
+            'aggs': {
+                'samples-classifications': {
+                    'terms': {
+                        'field': 'embedded.samples.classifications',
+                        'size': 200
+                    },
+                    'aggs': {
+                        'samples.term_name': {
+                            'terms': {
+                                'field': 'embedded.samples.term_name',
+                                'size': 200
+                            }
                         }
                     }
                 }
             }
-        }
+        },
+        'Date created': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
+                }
+            },
+            'aggs': {
+                'date_created': {
+                    'date_histogram': {
+                        'field': 'embedded.date_created',
+                        'calendar_interval': 'week',
+                        'format': 'MM-dd-yyyy'
+                    }
+                }
+            }
+        },
+        'Quality metric': {
+            'filter': {
+                'bool': {
+                    'must': [
+                        {'terms': {'embedded.status': ['released']}},
+                        {'terms': {'embedded.replicate.biosample.title': ['cell']}},
+                        {'terms': {'embedded.samples.classifications': ['primary cell']}},
+                        {'terms': {'embedded.samples.term_name': ['motor neuron']}},
+                        {'terms': {'embedded.@type': ['TestingSearchSchemaSpecialFacets']}},
+                        {'exists': {'field': 'embedded.dbxref'}},
+                        {'range': {'embedded.read_count': {'gte': '3000'}}}
+                    ],
+                    'must_not': [
+                        {'range': {'embedded.size': {'lt': '555'}}}
+                    ]
+                }
+            },
+            'aggs': {
+                'quality_metric': {
+                    'range': {
+                        'field': 'embedded.quality_metric',
+                        'ranges': [
+                            {'to': 100.0},
+                            {'from': 100.0, 'to': 1000.0},
+                            {'from': 1000.0, 'to': 2000.0},
+                            {'from': 2000.0}
+                        ]
+                    }
+                }
+            }
+        },
     }
     actual = bsqf.search.to_dict()
     assert all(
         k in actual.get('aggs', {}).keys()
         for k in partial_expected.get('aggs', {}).keys()
     )
+    assert actual['aggs']['Sample classification']['filter']['bool']['must'] == partial_expected['Sample classification']['filter']['bool']['must']
     assert (
         actual['aggs']['Read count range']['aggs']['read_count']['stats']['field'] == 'embedded.read_count'
     )
@@ -4986,7 +5168,7 @@ def test_searches_queries_basic_search_query_factory_build_query(dummy_request):
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10'
     )
     dummy_request.context = DummyResource()
@@ -5008,7 +5190,7 @@ def test_searches_queries_basic_search_query_factory_build_query(dummy_request):
                 'must': [
                     {'terms': {'embedded.@type': ['TestingSearchSchema']}},
                     {'terms': {'embedded.status': ['released', 'archived']}},
-                    {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                    {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                     {'terms': {'embedded.file_format': ['bam']}},
                     {'exists': {'field': 'embedded.dbxref'}}
                 ],
@@ -5037,7 +5219,7 @@ def test_searches_queries_basic_search_query_factory_build_query_fails_paging_co
     from pyramid.exceptions import HTTPBadRequest
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10&from=3'
     )
     dummy_request.context = DummyResource()
@@ -5046,7 +5228,7 @@ def test_searches_queries_basic_search_query_factory_build_query_fails_paging_co
     query = bsqf.build_query()
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=all&from=3'
     )
     dummy_request.context = DummyResource()
@@ -5056,7 +5238,7 @@ def test_searches_queries_basic_search_query_factory_build_query_fails_paging_co
         query = bsqf.build_query()
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10000&from=1000000'
     )
     dummy_request.context = DummyResource()
@@ -5066,7 +5248,7 @@ def test_searches_queries_basic_search_query_factory_build_query_fails_paging_co
         query = bsqf.build_query()
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=1000000&from=1'
     )
     dummy_request.context = DummyResource()
@@ -5076,7 +5258,7 @@ def test_searches_queries_basic_search_query_factory_build_query_fails_paging_co
         query = bsqf.build_query()
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=all&from=0'
     )
     dummy_request.context = DummyResource()
@@ -5096,7 +5278,7 @@ def test_searches_queries_basic_search_query_factory_build_query_with_ranges(dum
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10&type=*&status!=submitted&file_size=*'
         '&file_format%21=bigWig&restricted!=*&no_file_available!=*'
         '&file_size=gte:30000&file_size=lt:2560000&replicates.read_count=lte:99999999'
@@ -5126,7 +5308,7 @@ def test_searches_queries_basic_search_query_factory_build_query_with_ranges(dum
                 'must': [
                     {'terms': {'embedded.status': ['released', 'archived']}},
                     {'terms': {'embedded.file_format': ['bam']}},
-                    {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                    {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                     {'terms': {'embedded.@type': ['Item']}},
                     {'exists': {'field': 'embedded.dbxref'}},
                     {'exists': {'field': 'embedded.file_size'}},
@@ -5186,7 +5368,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10'
     )
     dummy_request.context = DummyResource()
@@ -5217,7 +5399,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
                         'must': [
                             {'terms': {'embedded.@type': ['TestingSearchSchema']}},
                             {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                            {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                             {'exists': {'field': 'embedded.dbxref'}}],
                         'must_not': [
                             {'terms': {'embedded.lab.name': ['thermo']}},
@@ -5241,7 +5423,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
                             {'terms': {'embedded.status': ['released', 'archived']}},
                             {'terms': {'embedded.@type': ['TestingSearchSchema']}},
                             {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                            {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                             {'exists': {'field': 'embedded.dbxref'}}
                         ],
                         'must_not': [
@@ -5266,7 +5448,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
                             {'terms': {'embedded.status': ['released', 'archived']}},
                             {'terms': {'embedded.@type': ['TestingSearchSchema']}},
                             {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                            {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                             {'exists': {'field': 'embedded.dbxref'}}],
                         'must_not': [
                             {'terms': {'embedded.lab.name': ['thermo']}},
@@ -5290,7 +5472,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
                         'must': [
                             {'terms': {'embedded.status': ['released', 'archived']}},
                             {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                            {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                             {'exists': {'field': 'embedded.dbxref'}}
                         ],
                         'must_not': [
@@ -5315,7 +5497,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
                             {'terms': {'embedded.status': ['released', 'archived']}},
                             {'terms': {'embedded.@type': ['TestingSearchSchema']}},
                             {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                            {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                             {'exists': {'field': 'embedded.dbxref'}}
                         ],
                         'must_not': [
@@ -5340,7 +5522,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
                             {'terms': {'embedded.status': ['released', 'archived']}},
                             {'terms': {'embedded.@type': ['TestingSearchSchema']}},
                             {'terms': {'embedded.file_format': ['bam']}},
-                            {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                            {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                             {'exists': {'field': 'embedded.dbxref'}}
                         ],
                         'must_not': [
@@ -5358,7 +5540,7 @@ def test_searches_queries_basic_search_query_factory_with_facets_build_query(dum
                     {'terms': {'embedded.status': ['released', 'archived']}},
                     {'terms': {'embedded.@type': ['TestingSearchSchema']}},
                     {'terms': {'embedded.file_format': ['bam']}},
-                    {'terms': {'embedded.replcate.biosample.title': ['cell']}},
+                    {'terms': {'embedded.replicate.biosample.title': ['cell']}},
                     {'exists': {'field': 'embedded.dbxref'}}
                 ],
                 'must_not': [
@@ -5399,7 +5581,7 @@ def test_searches_queries_basic_search_query_factory_without_facets_build_query(
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10'
     )
     dummy_request.context = DummyResource()
@@ -5434,7 +5616,7 @@ def test_searches_queries_cached_facet_query_factory_build_query(dummy_request):
     from pyramid.testing import DummyResource
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10'
     )
     dummy_request.context = DummyResource()
@@ -5730,7 +5912,7 @@ def test_searches_queries_basic_report_query_factory_build_query_fails_paging_co
     from pyramid.exceptions import HTTPBadRequest
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=10&from=3'
     )
     dummy_request.context = DummyResource()
@@ -5739,7 +5921,7 @@ def test_searches_queries_basic_report_query_factory_build_query_fails_paging_co
     query = brqf.build_query()
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=all&from=3'
     )
     dummy_request.context = DummyResource()
@@ -5749,7 +5931,7 @@ def test_searches_queries_basic_report_query_factory_build_query_fails_paging_co
         query = brqf.build_query()
     dummy_request.environ['QUERY_STRING'] = (
         'type=TestingSearchSchema&status=released&status=archived&file_format=bam'
-        '&lab.name!=thermo&restricted!=*&dbxref=*&replcate.biosample.title=cell'
+        '&lab.name!=thermo&restricted!=*&dbxref=*&replicate.biosample.title=cell'
         '&limit=50000&from=85000'
     )
     dummy_request.context = DummyResource()

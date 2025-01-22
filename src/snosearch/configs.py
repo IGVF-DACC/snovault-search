@@ -2,6 +2,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from .defaults import DEFAULT_TERMS_AGGREGATION_KWARGS
 from .defaults import DEFAULT_EXISTS_AGGREGATION_KWARGS
+from .defaults import DEFAULT_DATE_HISTOGRAM_AGGREGATION_KWARGS
+from .defaults import DEFAULT_RANGE_AGGREGATION_KWARGS
 from .interfaces import SEARCH_CONFIG
 
 from typing import List
@@ -49,6 +51,24 @@ class ExistsAggregationConfig(Config):
     def __init__(self, allowed_kwargs=[], **kwargs):
         super().__init__(
             allowed_kwargs=allowed_kwargs or DEFAULT_EXISTS_AGGREGATION_KWARGS,
+            **kwargs
+        )
+
+
+class DateHistogramAggregationConfig(Config):
+
+    def __init__(self, allowed_kwargs=[], **kwargs):
+        super().__init__(
+            allowed_kwargs=allowed_kwargs or DEFAULT_DATE_HISTOGRAM_AGGREGATION_KWARGS,
+            **kwargs
+        )
+
+
+class RangeAggregationConfig(Config):
+
+    def __init__(self, allowed_kwargs=[], **kwargs):
+        super().__init__(
+            allowed_kwargs=allowed_kwargs or DEFAULT_RANGE_AGGREGATION_KWARGS,
             **kwargs
         )
 

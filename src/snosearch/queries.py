@@ -8,7 +8,9 @@ from lucenequery.prefixfields import prefixfields
 
 
 from .adapters.exceptions import get_default_exception
+from .configs import DateHistogramAggregationConfig
 from .configs import ExistsAggregationConfig
+from .configs import RangeAggregationConfig
 from .configs import TermsAggregationConfig
 from .configs import SearchConfigRegistryClient
 from .configs import SearchConfigRegistryClientProps
@@ -24,6 +26,8 @@ from .defaults import BASE_FIELD_FACETS
 from .defaults import BASE_RETURN_FIELDS
 from .defaults import BASE_SEARCH_FIELDS
 from .defaults import DEFAULT_COLUMNS
+from .defaults import DEFAULT_DATE_HISTOGRAM_CALENDAR_INTERVAL
+from .defaults import DEFAULT_DATE_HISTOGRAM_DATE_FORMAT
 from .defaults import DEFAULT_FRAMES
 from .defaults import DEFAULT_SCAN_SIZE
 from .defaults import DEFAULT_SORT
@@ -39,10 +43,12 @@ from .interfaces import ASC
 from .interfaces import AUDIT
 from .interfaces import BOOL
 from .interfaces import BOOST_VALUES
+from .interfaces import CALENDAR_INTERVAL
 from .interfaces import COLLECTION_NAME
 from .interfaces import COLON
 from .interfaces import COLUMNS
 from .interfaces import DASH
+from .interfaces import DATE_HISTOGRAM
 from .interfaces import DESC
 from .interfaces import ELASTIC_SEARCH
 from .interfaces import EMBEDDED
@@ -50,10 +56,13 @@ from .interfaces import EMBEDDED_TYPE
 from .interfaces import EXCLUDE
 from .interfaces import EXISTS
 from .interfaces import FACETS
+from .interfaces import FIELD_KEY
 from .interfaces import FILTERS
+from .interfaces import FORMAT
 from .interfaces import FROM_KEY
 from .interfaces import GROUP_BY
 from .interfaces import GROUP_SUBMITTER
+from .interfaces import HIERARCHICAL
 from .interfaces import ITEM
 from .interfaces import LIMIT_KEY
 from .interfaces import LENGTH
@@ -83,6 +92,7 @@ from .interfaces import SEARCH_CONFIG
 from .interfaces import SIMPLE_QUERY_STRING
 from .interfaces import _SOURCE
 from .interfaces import STATS
+from .interfaces import SUBFACETS
 from .interfaces import TITLE
 from .interfaces import TERMS
 from .interfaces import TOP_HITS
@@ -307,6 +317,24 @@ class AbstractQueryFactory:
             for item_type in item_types
             if self._get_collection_name_for_item_type(item_type)
         ]
+
+    def _get_fields_from_subfacets(self, subfacets):
+        return [
+            subfacet.get(FIELD_KEY)
+            for subfacet in subfacets
+            if subfacet.get(FIELD_KEY)
+        ]
+
+    def _get_not_keys_for_facet_filter_context(self, facet_name, facet_options):
+        aggregation_type = facet_options.get(TYPE_KEY)
+        if aggregation_type == HIERARCHICAL:
+            return [facet_name] + self._get_fields_from_subfacets(
+                facet_options.get(
+                    SUBFACETS,
+                    []
+                )
+            )
+        return [facet_name]
 
     def _escape_regex_slashes(self, query):
         return query.replace('/', '\\/')
@@ -767,6 +795,35 @@ class AbstractQueryFactory:
             field=field
         )
 
+    def _make_date_histogram_aggregation(self, field, **kwargs):
+        return A(
+            DATE_HISTOGRAM,
+            field=field,
+            **DateHistogramAggregationConfig(**kwargs)
+        )
+
+    def _make_range_aggregation(self, field, **kwargs):
+        return A(
+            RANGE,
+            field=field,
+            **RangeAggregationConfig(**kwargs)
+        )
+
+    def _make_hierarchical_aggregation(self, field, **kwargs):
+        subfields = self._get_fields_from_subfacets(
+            kwargs.get(SUBFACETS, [])
+        )
+        hierarchical_agg = self._make_terms_aggregation(field, **kwargs)
+        agg = hierarchical_agg
+        for subfield in subfields:
+            subagg = self._make_terms_aggregation(
+                self._map_param_to_elasticsearch_field(subfield),
+                **kwargs
+            )
+            agg.bucket(subfield.replace(PERIOD, DASH), subagg)
+            agg = subagg
+        return hierarchical_agg
+
     def _make_filter_aggregation(self, filter_context, **kwargs):
         return A(
             'filter',
@@ -818,6 +875,12 @@ class AbstractQueryFactory:
             return self._make_exists_aggregation
         elif aggregation_type == STATS:
             return self._make_stats_aggregation
+        elif aggregation_type == HIERARCHICAL:
+            return self._make_hierarchical_aggregation
+        elif aggregation_type == DATE_HISTOGRAM:
+            return self._make_date_histogram_aggregation
+        elif aggregation_type == RANGE:
+            return self._make_range_aggregation
         return self._make_terms_aggregation
 
     def _add_must_equal_terms_filter(self, field, terms):
@@ -975,6 +1038,7 @@ class AbstractQueryFactory:
                 )
         )
 
+
     def add_aggregations_and_aggregation_filters(self):
         '''
         Each aggregation is computed in a filter context that filters
@@ -983,7 +1047,10 @@ class AbstractQueryFactory:
         params = self._get_post_filters()
         for facet_name, facet_options in self._get_facets():
             filtered_params = self.params_parser.get_not_keys_filters(
-                not_keys=[facet_name],
+                not_keys=self._get_not_keys_for_facet_filter_context(
+                    facet_name,
+                    facet_options,
+                ),
                 params=params
             )
             must, must_not, exists, not_exists, ranges, not_ranges = self._make_split_filter_queries(
@@ -996,7 +1063,23 @@ class AbstractQueryFactory:
                 field=self._map_param_to_elasticsearch_field(facet_name),
                 exclude=facet_options.get(EXCLUDE),
                 # TODO: size should be defined in schema instead of long keyword.
-                size=3000 if facet_options.get(LENGTH) == LONG else 200
+                size=3000 if facet_options.get(LENGTH) == LONG else 200,
+                subfacets=facet_options.get(
+                    SUBFACETS,
+                    []
+                ),
+                calendar_interval=facet_options.get(
+                    CALENDAR_INTERVAL,
+                    DEFAULT_DATE_HISTOGRAM_CALENDAR_INTERVAL,
+                ),
+                format=facet_options.get(
+                    FORMAT,
+                    DEFAULT_DATE_HISTOGRAM_DATE_FORMAT,
+                ),
+                ranges=facet_options.get(
+                    RANGES,
+                    []
+                )
             )
             agg = self._make_filter_and_subaggregation(
                 title=facet_name.replace(PERIOD, DASH),

@@ -15,6 +15,37 @@ def snowflakes_facets():
                 ('lab.title', {'title': 'Lab', 'open_on_load': False}),
                 ('file_size', {'title': 'File size statistics', 'type': 'stats'}),
                 ('restricted', {'title': 'File is restricted', 'type': 'exists'}),
+                (
+                    'samples.classifications', {
+                        'title': 'Sample classifications',
+                        'type': 'hierarchical',
+                        'subfacets': [
+                            {
+                                'field': 'samples.sample_terms.term_name',
+                                'title': 'Sample term name',
+                            }
+                        ]
+                    }
+                ),
+                (
+                    'release_timestamp', {
+                        'title': 'Release timestamp',
+                        'type': 'date_histogram',
+                        'calendar_interval': 'week',
+                        'format': 'MM-dd-yyyy'
+                    }
+                ),
+                (
+                    'lower_bound_age_in_hours', {
+                         'title': 'Lower bound age in hours',
+                        'type': 'range',
+                        'ranges': [
+                            {'to': 1000.0},
+                            {'from': 1000.0, 'to': 10000.0},
+                            {'from': 10000.0}
+                        ]
+                    }
+                ),
         ]
     }
 
@@ -145,6 +176,68 @@ def raw_snowflakes_query():
                             'field': 'embedded.lab.title',
                             'size': 200,
                             'exclude': []
+                        }
+                    }
+                }
+            },
+            'Sample classifications':{
+                'filter': {
+                    'bool': {
+                        'must': [
+                             {'terms': {'embedded.@type': ['Snowflake']}}
+                        ]
+                    }
+                },
+                'aggs': {
+                    'samples-classifications': {
+                        'terms': {
+                            'field': 'embedded.samples.classifications'
+                        },
+                        'aggs': {
+                            'samples-sample_terms-term_name': {
+                                'terms': {
+                                    'field': 'embedded.samples.sample_terms.term_name'
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            'Release timestamp': {
+                'filter': {
+                    'bool': {
+                        'must': [
+                            {'terms': {'embedded.@type': ['Snowflake']}}
+                        ]
+                    }
+                },
+                'aggs': {
+                    'release_timestamp': {
+                        'date_histogram': {
+                            'field': 'embedded.release_timestamp',
+                            'calendar_interval': 'week',
+                            'format': 'dd-MM-yyyy'
+                        }
+                    }
+                }
+            },
+            'Lower bound age in hours': {
+                'filter': {
+                    'bool': {
+                        'must': [
+                             {'terms': {'embedded.@type': ['Snowflake']}}
+                        ]
+                    }
+                },
+                'aggs': {
+                    'lower_bound_age_in_hours': {
+                        'range': {
+                            'field': 'embedded.lower_bound_age_in_hours',
+                            'ranges': [
+                                {'to': 1000.0},
+                                {'from': 1000.0, 'to': 10000.0},
+                                {'from': 10000.0}
+                            ]
                         }
                     }
                 }
@@ -570,6 +663,147 @@ def raw_response():
                         'sum': 586519624274
                     }
                 },
+                'Sample classifications': {
+                    'doc_count': 27,
+                    'samples-classifications': {
+                        'doc_count_error_upper_bound': 0,
+                        'sum_other_doc_count': 0,
+                        'buckets': [
+                            {
+                                'key': 'primary cell',
+                                'doc_count': 14,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'motor neuron',
+                                            'doc_count': 14
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'multiplexed sample',
+                                'doc_count': 6,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'motor neuron',
+                                            'doc_count': 6
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'cell line',
+                                'doc_count': 3,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'motor neuron',
+                                            'doc_count': 3
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'whole organism',
+                                'doc_count': 2,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'whole organism',
+                                            'doc_count': 2
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'technical sample',
+                                'doc_count': 1,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'technical sample',
+                                            'doc_count': 1
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                'key': 'tissue', 'doc_count': 1,
+                                'samples-sample_terms-term_name': {
+                                    'doc_count_error_upper_bound': 0,
+                                    'sum_other_doc_count': 0,
+                                    'buckets': [
+                                        {
+                                            'key': 'lung',
+                                            'doc_count': 1
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                'Release timestamp': {
+                    'doc_count': 27,
+                    'release_timestamp': {
+                        'buckets': [
+                            {'key_as_string': '04-03-2024', 'key': 1709510400000, 'doc_count': 19},
+                            {'key_as_string': '11-03-2024', 'key': 1710115200000, 'doc_count': 0},
+                            {'key_as_string': '18-03-2024', 'key': 1710720000000, 'doc_count': 0},
+                            {'key_as_string': '25-03-2024', 'key': 1711324800000, 'doc_count': 0},
+                            {'key_as_string': '01-04-2024', 'key': 1711929600000, 'doc_count': 0},
+                            {'key_as_string': '08-04-2024', 'key': 1712534400000, 'doc_count': 0},
+                            {'key_as_string': '15-04-2024', 'key': 1713139200000, 'doc_count': 0},
+                            {'key_as_string': '22-04-2024', 'key': 1713744000000, 'doc_count': 0},
+                            {'key_as_string': '29-04-2024', 'key': 1714348800000, 'doc_count': 0},
+                            {'key_as_string': '06-05-2024', 'key': 1714953600000, 'doc_count': 0},
+                            {'key_as_string': '13-05-2024', 'key': 1715558400000, 'doc_count': 0},
+                            {'key_as_string': '20-05-2024', 'key': 1716163200000, 'doc_count': 0},
+                            {'key_as_string': '27-05-2024', 'key': 1716768000000, 'doc_count': 0},
+                            {'key_as_string': '03-06-2024', 'key': 1717372800000, 'doc_count': 1},
+                            {'key_as_string': '10-06-2024', 'key': 1717977600000, 'doc_count': 0},
+                            {'key_as_string': '17-06-2024', 'key': 1718582400000, 'doc_count': 0},
+                            {'key_as_string': '24-06-2024', 'key': 1719187200000, 'doc_count': 0},
+                            {'key_as_string': '01-07-2024', 'key': 1719792000000, 'doc_count': 4},
+                            {'key_as_string': '08-07-2024', 'key': 1720396800000, 'doc_count': 0},
+                            {'key_as_string': '15-07-2024', 'key': 1721001600000, 'doc_count': 0},
+                            {'key_as_string': '22-07-2024', 'key': 1721606400000, 'doc_count': 0},
+                            {'key_as_string': '29-07-2024', 'key': 1722211200000, 'doc_count': 0},
+                            {'key_as_string': '05-08-2024', 'key': 1722816000000, 'doc_count': 0},
+                            {'key_as_string': '12-08-2024', 'key': 1723420800000, 'doc_count': 0},
+                            {'key_as_string': '19-08-2024', 'key': 1724025600000, 'doc_count': 0},
+                            {'key_as_string': '26-08-2024', 'key': 1724630400000, 'doc_count': 0},
+                            {'key_as_string': '02-09-2024', 'key': 1725235200000, 'doc_count': 0},
+                            {'key_as_string': '09-09-2024', 'key': 1725840000000, 'doc_count': 0},
+                            {'key_as_string': '16-09-2024', 'key': 1726444800000, 'doc_count': 0},
+                            {'key_as_string': '23-09-2024', 'key': 1727049600000, 'doc_count': 0},
+                            {'key_as_string': '30-09-2024', 'key': 1727654400000, 'doc_count': 0},
+                            {'key_as_string': '07-10-2024', 'key': 1728259200000, 'doc_count': 3}
+                        ]
+                    }
+                },
+                'Lower bound age in hours': {
+                    'doc_count': 7,
+                    'lower_bound_age_in_hours': {
+                        'buckets': [
+                            {'key': '*-1000.0', 'to': 1000.0, 'doc_count': 3},
+                            {'key': '1000.0-10000.0', 'from': 1000.0, 'to': 10000.0, 'doc_count': 2},
+                            {'key': '10000.0-*', 'from': 10000.0, 'doc_count': 1}
+                        ]
+                    }
+                }
             }
         }
     }
@@ -1501,6 +1735,308 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_aggregation_bucket_to_list(r
     assert len(actual) == len(expected)
 
 
+def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response):
+    from snosearch.mixins import AggsToFacetsMixin
+    afm = AggsToFacetsMixin()
+    expected = [
+        {
+            'key': 'primary cell',
+            'doc_count': 14,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 14}
+                ]
+            }
+        },
+        {
+            'key': 'multiplexed sample',
+            'doc_count': 6,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 6}
+                ]
+            }
+        },
+        {
+            'key': 'cell line',
+            'doc_count': 3,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 3}
+                ]
+            }
+        },
+        {
+            'key': 'whole organism',
+            'doc_count': 2,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'whole organism', 'doc_count': 2}
+                ]
+            }
+        },
+        {
+            'key': 'technical sample',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'technical sample', 'doc_count': 1}
+                ]
+            }
+        },
+        {
+            'key': 'tissue',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'lung', 'doc_count': 1}
+                ]
+            }
+        }
+    ]
+    actual = afm._parse_subfacet_bucket(
+        raw_response['hits']['aggregations']['Sample classifications']['samples-classifications']['buckets'],
+        [
+            {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+            }
+        ]
+    )
+    assert all([e in actual for e in expected])
+    assert len(actual) == len(expected)
+
+
+def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket_custom_data():
+    from snosearch.mixins import AggsToFacetsMixin
+    raw_agg = {'lab': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': '/labs/danwei-huangfu/', 'doc_count': 14, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 3, 'buckets': [{'key': '10x multiome', 'doc_count': 2, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 2}]}}, {'key': '10x multiome with MULTI-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Cell painting', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Hi-C', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'MPRA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'MPRA (scQer)', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'RNA-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'electroporated MPRA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'lentiMPRA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'scRNA-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/ali-mortazavi/', 'doc_count': 4, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'ONT Fiber-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'ONT dRNA', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'ONT direct WGS', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Parse SPLiT-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/christina-leslie/', 'doc_count': 2, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'STARR-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Spatial transcriptomics', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/lea-starita/', 'doc_count': 2, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'VAMP-seq (MultiSTEP)', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'Variant painting via fluorescence', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/tim-reddy/', 'doc_count': 2, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'CERES-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}, {'key': 'SUPERSTARR', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/j-michael-cherry/', 'doc_count': 1, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'SUPERSTARR', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/jesse-engreitz/', 'doc_count': 1, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'Variant-EFFECTS', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}, {'key': '/labs/lior-pachter/', 'doc_count': 1, 'preferred_assay_title': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'SHARE-seq', 'doc_count': 1, 'status': {'doc_count_error_upper_bound': 0, 'sum_other_doc_count': 0, 'buckets': [{'key': 'released', 'doc_count': 1}]}}]}}]}}
+    afm = AggsToFacetsMixin()
+    expected = [
+        {
+            'key': '/labs/danwei-huangfu/',
+            'doc_count': 14,
+            'subfacet': {
+                'field':
+                'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': '10x multiome',
+                        'doc_count': 2,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 2}
+                            ]
+                        }
+                    },
+                    {
+                        'key': '10x multiome with MULTI-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'Cell painting',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'Hi-C',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'MPRA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'MPRA (scQer)',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'RNA-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'electroporated MPRA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'lentiMPRA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                     },
+                    {
+                        'key': 'scRNA-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            'key': '/labs/ali-mortazavi/',
+            'doc_count': 2,
+            'subfacet': {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': 'ONT Fiber-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    },
+                    {
+                        'key': 'ONT dRNA',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            'key': '/labs/christina-leslie/',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': 'STARR-seq',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            'key': '/labs/j-michael-cherry/',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+                'terms': [
+                    {
+                        'key': 'SUPERSTARR',
+                        'doc_count': 1,
+                        'subfacet': {
+                            'field': 'status',
+                            'title': 'Status',
+                            'terms': [
+                                {'key': 'released', 'doc_count': 1}
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+    actual = afm._parse_subfacet_bucket(
+        raw_agg['lab']['buckets'],
+        [
+            {
+                'field': 'preferred_assay_title',
+                'title': 'Preferred assay title',
+            },
+            {
+                'field': 'status',
+                'title': 'Status',
+            }
+        ]
+    )
+    assert len(actual[0]['subfacet']['terms']) == 10
+    assert len(actual[0]['subfacet']['terms'][0]['subfacet']['terms']) == 1
+
+
 def test_searches_mixins_aggs_to_facets_mixin_get_aggregation_result(
         basic_query_response_with_facets,
         mocker,
@@ -1571,6 +2107,88 @@ def test_searches_mixins_aggs_to_facets_mixin_get_aggregation_bucket(
         {'key': 'J. Michael Cherry, Stanford', 'doc_count': 35}
     ]
     actual = basic_query_response_with_facets._get_aggregation_bucket('lab.title')
+    assert all([e in actual for e in expected])
+    assert len(expected) == len(actual)
+
+
+def test_searches_mixins_aggs_to_facets_mixin_get_hierarchical_aggregation_bucket(
+        basic_query_response_with_facets,
+        mocker,
+        snowflakes_facets
+):
+    from snosearch.mixins import AggsToFacetsMixin
+    mocker.patch.object(AggsToFacetsMixin, '_get_facets')
+    AggsToFacetsMixin._get_facets.return_value = snowflakes_facets
+    expected = [
+        {
+            'key': 'primary cell',
+            'doc_count': 14,
+            'subfacet': {
+                'field':
+                'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 14}
+                ]
+            }
+        },
+        {
+            'key': 'multiplexed sample',
+            'doc_count': 6,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 6}
+                ]
+            }
+        },
+        {
+            'key': 'cell line',
+            'doc_count': 3,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'motor neuron', 'doc_count': 3}
+                ]
+            }
+        },
+        {
+            'key': 'whole organism',
+            'doc_count': 2,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'whole organism', 'doc_count': 2}
+                ]
+            }
+        },
+        {
+            'key': 'technical sample',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'technical sample', 'doc_count': 1}
+                ]
+            }
+        },
+        {
+            'key': 'tissue',
+            'doc_count': 1,
+            'subfacet': {
+                'field': 'samples.sample_terms.term_name',
+                'title': 'Sample term name',
+                'terms': [
+                    {'key': 'lung', 'doc_count': 1}
+                ]
+            }
+        }
+    ]
+    actual = basic_query_response_with_facets._get_hierarchical_aggregation_bucket('samples.classifications')
     assert all([e in actual for e in expected])
     assert len(expected) == len(actual)
 
@@ -1742,6 +2360,138 @@ def test_searches_mixins_aggs_to_facets_mixin_format_aggregations(
             'type': 'exists',
             'appended': False,
             'open_on_load': False
+        },
+        {
+            'field': 'samples.classifications',
+            'title': 'Sample classifications',
+            'terms': [
+                {
+                    'key': 'primary cell',
+                    'doc_count': 14,
+                    'subfacet': {
+                        'field':
+                        'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'motor neuron', 'doc_count': 14}
+                        ]
+                    }
+                },
+                {
+                    'key': 'multiplexed sample',
+                    'doc_count': 6,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'motor neuron', 'doc_count': 6}
+                        ]
+                    }
+                },
+                {
+                    'key': 'cell line',
+                    'doc_count': 3,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'motor neuron', 'doc_count': 3}
+                        ]
+                    }
+                },
+                {
+                    'key': 'whole organism',
+                    'doc_count': 2,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'whole organism', 'doc_count': 2}
+                        ]
+                    }
+                },
+                {
+                    'key': 'technical sample',
+                    'doc_count': 1,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'technical sample', 'doc_count': 1}
+                        ]
+                    }
+                },
+                {
+                    'key': 'tissue',
+                    'doc_count': 1,
+                    'subfacet': {
+                        'field': 'samples.sample_terms.term_name',
+                        'title': 'Sample term name',
+                        'terms': [
+                            {'key': 'lung', 'doc_count': 1}
+                        ]
+                    }
+                }
+            ],
+            'total': 27,
+            'type': 'hierarchical',
+            'appended': False,
+            'open_on_load': False
+        },
+        {
+            'field': 'release_timestamp',
+            'title': 'Release timestamp',
+            'terms': [
+                {'key_as_string': '04-03-2024', 'key': 1709510400000, 'doc_count': 19},
+                {'key_as_string': '11-03-2024', 'key': 1710115200000, 'doc_count': 0},
+                {'key_as_string': '18-03-2024', 'key': 1710720000000, 'doc_count': 0},
+                {'key_as_string': '25-03-2024', 'key': 1711324800000, 'doc_count': 0},
+                {'key_as_string': '01-04-2024', 'key': 1711929600000, 'doc_count': 0},
+                {'key_as_string': '08-04-2024', 'key': 1712534400000, 'doc_count': 0},
+                {'key_as_string': '15-04-2024', 'key': 1713139200000, 'doc_count': 0},
+                {'key_as_string': '22-04-2024', 'key': 1713744000000, 'doc_count': 0},
+                {'key_as_string': '29-04-2024', 'key': 1714348800000, 'doc_count': 0},
+                {'key_as_string': '06-05-2024', 'key': 1714953600000, 'doc_count': 0},
+                {'key_as_string': '13-05-2024', 'key': 1715558400000, 'doc_count': 0},
+                {'key_as_string': '20-05-2024', 'key': 1716163200000, 'doc_count': 0},
+                {'key_as_string': '27-05-2024', 'key': 1716768000000, 'doc_count': 0},
+                {'key_as_string': '03-06-2024', 'key': 1717372800000, 'doc_count': 1},
+                {'key_as_string': '10-06-2024', 'key': 1717977600000, 'doc_count': 0},
+                {'key_as_string': '17-06-2024', 'key': 1718582400000, 'doc_count': 0},
+                {'key_as_string': '24-06-2024', 'key': 1719187200000, 'doc_count': 0},
+                {'key_as_string': '01-07-2024', 'key': 1719792000000, 'doc_count': 4},
+                {'key_as_string': '08-07-2024', 'key': 1720396800000, 'doc_count': 0},
+                {'key_as_string': '15-07-2024', 'key': 1721001600000, 'doc_count': 0},
+                {'key_as_string': '22-07-2024', 'key': 1721606400000, 'doc_count': 0},
+                {'key_as_string': '29-07-2024', 'key': 1722211200000, 'doc_count': 0},
+                {'key_as_string': '05-08-2024', 'key': 1722816000000, 'doc_count': 0},
+                {'key_as_string': '12-08-2024', 'key': 1723420800000, 'doc_count': 0},
+                {'key_as_string': '19-08-2024', 'key': 1724025600000, 'doc_count': 0},
+                {'key_as_string': '26-08-2024', 'key': 1724630400000, 'doc_count': 0},
+                {'key_as_string': '02-09-2024', 'key': 1725235200000, 'doc_count': 0},
+                {'key_as_string': '09-09-2024', 'key': 1725840000000, 'doc_count': 0},
+                {'key_as_string': '16-09-2024', 'key': 1726444800000, 'doc_count': 0},
+                {'key_as_string': '23-09-2024', 'key': 1727049600000, 'doc_count': 0},
+                {'key_as_string': '30-09-2024', 'key': 1727654400000, 'doc_count': 0},
+                {'key_as_string': '07-10-2024', 'key': 1728259200000, 'doc_count': 3}
+            ],
+            'total': 27,
+            'type': 'date_histogram',
+            'appended': False,
+            'open_on_load': False
+        },
+        {
+            'field': 'lower_bound_age_in_hours',
+            'title': 'Lower bound age in hours',
+            'terms': [
+                {'key': '*-1000.0', 'to': 1000.0, 'doc_count': 3},
+                {'key': '1000.0-10000.0', 'from': 1000.0, 'to': 10000.0, 'doc_count': 2},
+                {'key': '10000.0-*', 'from': 10000.0, 'doc_count': 1}
+            ],
+            'total': 7,
+            'type': 'range',
+            'appended': False,
+            'open_on_load': False
         }
     ]
     actual = basic_query_response_with_facets.facets
@@ -1879,7 +2629,7 @@ def test_searches_mixins_aggs_to_facets_mixin_to_facets(
     mocker.patch.object(AggsToFacetsMixin, '_get_facets')
     AggsToFacetsMixin._get_facets.return_value = snowflakes_facets
     actual = basic_query_response_with_facets.to_facets()
-    assert len(actual) == 14
+    assert len(actual) == 17
 
 
 def test_searches_mixins_hits_to_graph_mixin_init():

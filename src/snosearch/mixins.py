@@ -9,6 +9,7 @@ from .interfaces import BUCKETS
 from .interfaces import DASH
 from .interfaces import DOC_COUNT
 from .interfaces import FIELD_KEY
+from .interfaces import HIERARCHICAL
 from .interfaces import JS_IS_EQUAL
 from .interfaces import JS_TRUE
 from .interfaces import JS_FALSE
@@ -16,6 +17,8 @@ from .interfaces import KEY
 from .interfaces import OPEN_ON_LOAD
 from .interfaces import PERIOD
 from .interfaces import STATS
+from .interfaces import SUBFACET
+from .interfaces import SUBFACETS
 from .interfaces import TERMS
 from .interfaces import TITLE
 from .interfaces import TOTAL
@@ -61,6 +64,9 @@ class AggsToFacetsMixin:
     def _get_facet_open_on_load(self, facet_name):
         return self._get_facets().get(facet_name, {}).get(OPEN_ON_LOAD, False)
 
+    def _get_facet_subfacets(self, facet_name):
+        return self._get_facets().get(facet_name, {}).get(SUBFACETS, [])
+
     def _parse_aggregation_bucket_to_list(self, aggregation_bucket):
         '''
         Specifically parses filters aggregations.
@@ -72,6 +78,33 @@ class AggsToFacetsMixin:
             }
             for k, v in aggregation_bucket.items()
         ]
+
+    def _parse_subfacet_bucket(self, bucket, subfacets):
+        # Recurse down through raw buckets structure.
+        results = []
+        for item in bucket:
+            result = {
+                KEY: item.get(KEY),
+                DOC_COUNT: item.get(DOC_COUNT),
+            }
+            if not subfacets:
+                results.append(result)
+                continue
+            subfacet_name = self._get_facet_name(
+                subfacets[0][FIELD_KEY]
+            )
+            if subfacet_name in item:
+                subfacet = item[subfacet_name]
+                result[SUBFACET] = {
+                    FIELD_KEY: subfacets[0].get(FIELD_KEY),
+                    TITLE: subfacets[0].get(TITLE),
+                    TERMS: self._parse_subfacet_bucket(
+                        subfacet.get(BUCKETS, []),
+                        subfacets[1:],
+                    )
+                }
+            results.append(result)
+        return results
 
     def _get_aggregation_result(self, facet_name):
         return self._get_aggregations().get(
@@ -94,6 +127,17 @@ class AggsToFacetsMixin:
             )
         return aggregation_bucket
 
+
+    def _get_hierarchical_aggregation_bucket(self, facet_name):
+        subfacets = self._get_facet_subfacets(facet_name)
+        aggregation_bucket = self._get_aggregation_details(
+            facet_name
+        ).get(BUCKETS, [])
+        return self._parse_subfacet_bucket(
+            aggregation_bucket,
+            subfacets,
+        )
+
     def _get_aggregation_metric(self, facet_name):
         return self._get_aggregation_details(
             facet_name
@@ -102,6 +146,8 @@ class AggsToFacetsMixin:
     def _aggregation_parser_factory(self, facet_name):
         if self._get_facet_type(facet_name) == STATS:
             return self._get_aggregation_metric
+        elif self._get_facet_type(facet_name) == HIERARCHICAL:
+            return self._get_hierarchical_aggregation_bucket
         return self._get_aggregation_bucket
 
     def _get_aggregation_terms(self, facet_name):
@@ -116,10 +162,10 @@ class AggsToFacetsMixin:
         ).get(DOC_COUNT)
 
     def _get_fake_facets(self):
-        facet_keys = [
-            k
-            for k in self._get_facets()
-        ]
+        facet_keys = []
+        for k in self._get_facets():
+            facet_keys.append(k)
+            facet_keys.extend(self._get_facet_subfacets(k))
         return self.query_builder.params_parser.get_not_keys_filters(
             not_keys=facet_keys,
             params=self._get_post_filters()
