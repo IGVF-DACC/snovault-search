@@ -248,17 +248,109 @@ def test_searches_configs_search_config_registry_add_aliases_and_defaults(dummy_
         'SomeItem': ['DefaultConfig']
     }
     search_registry.add_aliases(aliases)
-    assert search_registry.aliases.as_dict() == {
-        ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2'],
+        },
     }
     search_registry.add_defaults(defaults)
-    assert search_registry.defaults.as_dict() == {
-        ('SomeItem',): ['DefaultConfig']
+    assert search_registry.defaults_to_dict() == {
+        'global': {
+            ('SomeItem',): ['DefaultConfig'],
+        },
     }
     search_registry.add_aliases({('AnotherAlias', 'Multkey', 'AndSorted'): ['XYZ']})
-    assert search_registry.aliases.as_dict() == {
-        ('AndSorted', 'AnotherAlias', 'Multkey'): ['XYZ'],
-        ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('AndSorted', 'AnotherAlias', 'Multkey'): ['XYZ'],
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2'],
+        },
+    }
+
+
+def test_searches_configs_search_config_registry_add_aliases_and_defaults_to_json(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    registry = search_registry.registry
+    aliases = {
+        'SomeAlias': ['AliasesItem1', 'AliasesItem2'],
+        ('Another', 'Alias'): ['A', 'B', 'C'],
+    }
+    defaults = {
+        'SomeItem': ['DefaultConfig'],
+        'MoreDefaults': ['1', '2', '3'],
+    }
+    search_registry.add_aliases(aliases)
+    assert search_registry.aliases_to_json() == {
+        'global': {
+            "('Alias', 'Another')": ['A', 'B', 'C'],
+            "('SomeAlias',)": ['AliasesItem1', 'AliasesItem2']
+        }
+    }
+    search_registry.add_defaults(defaults)
+    assert search_registry.defaults_to_json() == {
+        'global': {
+            "('MoreDefaults',)": ['1', '2', '3'],
+            "('SomeItem',)": ['DefaultConfig']
+        }
+    }
+    search_registry.clear()
+    search_registry.registry = registry
+
+
+def test_searches_configs_search_config_registry_add_defaults_and_aliases_by_group(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    aliases = {
+        'SomeAlias': ['AliasesItem1', 'AliasesItem2']
+    }
+    defaults = {
+        'SomeItem': ['DefaultConfig']
+    }
+    search_registry.add_aliases(aliases)
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+    }
+    search_registry.add_aliases(aliases, group='report')
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+        'report': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+    }
+    search_registry.add_aliases({'AnotherAlias': ['ConcreteType']}, group='report')
+    assert search_registry.aliases_to_dict() == {
+        'global': {
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+        'report': {
+            ('AnotherAlias',): ['ConcreteType'],
+            ('SomeAlias',): ['AliasesItem1', 'AliasesItem2']
+        },
+    }
+    search_registry.add_defaults(defaults)
+    assert search_registry.defaults_to_dict() == {
+        'global': {
+            ('SomeItem',): ['DefaultConfig'],
+        },
+    }
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchemaForReports': ['TestingDownload']
+        },
+        group='report',
+    )
+    assert search_registry.defaults_to_dict() == {
+        'global': {
+            ('SomeItem',): ['DefaultConfig']
+        },
+        'report': {
+            ('TestingSearchSchemaForReports',): ['TestingDownload']
+        }
     }
 
 
@@ -296,6 +388,62 @@ def test_searches_configs_search_config_registry_resolve_config_names(dummy_requ
     config_names = search_registry._resolve_config_names(['AllConfigs'], use_defaults=False)
     assert len(config_names) == 2
     assert config_names == ['TestingSearchSchema', 'TestingSearchSchema']
+    search_registry.clear()
+    search_registry.registry = registry
+
+
+def test_searches_configs_search_config_registry_resolve_config_names_by_group(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    registry = search_registry.registry
+    config_names = search_registry._resolve_config_names(['TestingSearchSchema'], group='report')
+    assert len(config_names) == 1
+    assert config_names == ['TestingSearchSchema']
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestConfigItem'],
+        },
+        group='report'
+    )
+    config_names = search_registry._resolve_config_names(['TestingSearchSchema'], group='report')
+    assert len(config_names) == 1
+    assert config_names == ['TestConfigItem']
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestConfigItem', 'TestingPostPutPatch'],
+        },
+        group='report'
+    )
+    config_names = search_registry._resolve_config_names(['TestingSearchSchema'], group='report')
+    assert len(config_names) == 2
+    assert config_names == ['TestConfigItem', 'TestingPostPutPatch']
+    search_registry.add_aliases(
+        {
+            'AllConfigs': ['TestingSearchSchema']
+        },
+        group='report',
+    )
+    config_names = search_registry._resolve_config_names(['AllConfigs'], group='report')
+    assert len(config_names) == 2
+    assert config_names == ['TestConfigItem', 'TestingPostPutPatch']
+    # Resolves to concrete self.
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestingSearchSchema', 'TestConfigItem', 'TestingPostPutPatch'],
+        },
+        group='report'
+    )
+    config_names = search_registry._resolve_config_names(['AllConfigs'], group='report')
+    assert len(config_names) == 3
+    assert config_names == ['TestingSearchSchema', 'TestConfigItem', 'TestingPostPutPatch']
+    with pytest.raises(ValueError):
+        # Can't add aliass with same name as concrete config.
+        search_registry.add_aliases(
+            {
+                'TestingSearchSchema': ['TestingSearchSchema', 'TestingSearchSchema']
+            },
+            group='report',
+        )
     search_registry.clear()
     search_registry.registry = registry
 
@@ -613,3 +761,45 @@ def test_searches_configs_search_config_registry_register_pieces_from_item():
     assert len(registry.registry.as_dict()) == 0
     registry.register_pieces_from_item(TypeWithNoPieces)
     assert len(registry.registry.as_dict()) == 0
+
+
+def test_searches_configs_search_config_registry_client_initializes(dummy_request):
+    from snosearch.interfaces import SEARCH_CONFIG
+    from snosearch.configs import SearchConfigRegistryClientProps
+    from snosearch.configs import SearchConfigRegistryClient
+    from snosearch.configs import SearchConfig
+    search_registry = dummy_request.registry[SEARCH_CONFIG]
+    registry = search_registry.registry
+    search_registry.add_defaults(
+        {
+            'TestingSearchSchema': ['TestConfigItem', 'TestingDownload'],
+        },
+        group='report'
+    )
+    global_client = SearchConfigRegistryClient(
+        props=SearchConfigRegistryClientProps(
+            registry=search_registry,
+            group='global',
+        )
+    )
+    report_client = SearchConfigRegistryClient(
+        props=SearchConfigRegistryClientProps(
+            registry=search_registry,
+            group='report',
+        )
+    )
+    assert isinstance(global_client, SearchConfigRegistryClient)
+    assert isinstance(report_client, SearchConfigRegistryClient)
+    configs = global_client.get('TestingSearchSchema')
+    assert len(configs) == 1
+    config = configs[0]
+    assert isinstance(config, SearchConfig)
+    assert config.name == 'TestingSearchSchema'
+    configs = report_client.get('TestingSearchSchema')
+    assert len(configs) == 2
+    assert isinstance(configs[0], SearchConfig)
+    assert configs[0].name == 'TestConfigItem'
+    assert configs[1].name == 'TestingDownload'
+    assert 'attachment' in configs[1].columns
+    search_registry.clear()
+    search_registry.registry = registry

@@ -240,12 +240,12 @@ def test_searches_queries_abstract_query_factory_get_registered_types(params_par
     integrations,
     indirect=True
 )
-def test_searches_queries_abstract_query_factory_get_search_config_registry(params_parser_snovault_types):
-    from snosearch.configs import SearchConfigRegistry
+def test_searches_queries_abstract_query_factory_get_search_config_registry_client(params_parser_snovault_types):
+    from snosearch.configs import SearchConfigRegistryClient
     from snosearch.queries import AbstractQueryFactory
     aq = AbstractQueryFactory(params_parser_snovault_types)
-    search_config_registry = aq._get_search_config_registry()
-    assert isinstance(search_config_registry, SearchConfigRegistry)
+    search_config_registry_client = aq._get_search_config_registry_client()
+    assert isinstance(search_config_registry_client, SearchConfigRegistryClient)
 
 
 @pytest.mark.parametrize(
@@ -277,12 +277,13 @@ def test_searches_queries_abstract_query_factory_get_schema_for_item_type(params
     integrations,
     indirect=True
 )
-def test_searches_queries_abstract_query_factory_get_search_config_for_item_type(params_parser_snovault_types):
+def test_searches_queries_abstract_query_factory_get_search_configs_for_item_type(params_parser_snovault_types):
     from snosearch.queries import AbstractQueryFactory
     from snosearch.configs import SearchConfig
     aq = AbstractQueryFactory(params_parser_snovault_types)
-    config = aq._get_search_config_for_item_type('TestingSearchSchema')
-    assert isinstance(config, SearchConfig)
+    config = aq._get_search_configs_for_item_type('TestingSearchSchema')
+    assert len(config) == 1
+    assert isinstance(config[0], SearchConfig)
 
 
 @pytest.mark.parametrize(

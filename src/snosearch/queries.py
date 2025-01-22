@@ -10,6 +10,8 @@ from lucenequery.prefixfields import prefixfields
 from .adapters.exceptions import get_default_exception
 from .configs import ExistsAggregationConfig
 from .configs import TermsAggregationConfig
+from .configs import SearchConfigRegistryClient
+from .configs import SearchConfigRegistryClientProps
 from .decorators import assert_none_returned
 from .decorators import assert_one_returned
 from .decorators import assert_one_or_none_returned
@@ -132,8 +134,17 @@ class AbstractQueryFactory:
     def _get_principals(self):
         return self.params_parser._request.effective_principals
 
-    def _get_search_config_registry(self):
-        return self.params_parser._request.registry[SEARCH_CONFIG]
+    def _get_search_config_registry_client(self):
+        return (
+            self.kwargs.get('search_config_registry_client') or
+            SearchConfigRegistryClient(
+                props=SearchConfigRegistryClientProps(
+                    registry=self.params_parser._request.registry[SEARCH_CONFIG],
+                    group='global',
+                    use_defaults=True,
+                )
+            )
+        )
 
     def _get_registered_types(self):
         return self.params_parser._request.registry[TYPES]
@@ -144,17 +155,11 @@ class AbstractQueryFactory:
     def _get_schema_for_item_type(self, item_type):
         return self._get_registered_types()[item_type].schema
 
-    def _get_search_config_for_item_type(self, item_type):
-        return self._get_search_config_registry().get(
-            item_type,
-            {}
-        )
+    def _get_search_configs_by_names(self, names):
+        return self._get_search_config_registry_client().get(names)
 
-    def _get_search_configs_by_names(self, names, use_defaults=True):
-        return self._get_search_config_registry().get_configs_by_names(
-            names,
-            use_defaults=use_defaults
-        )
+    def _get_search_configs_for_item_type(self, item_type):
+        return self._get_search_config_registry_client().get(item_type)
 
     def _get_subtypes_for_item_type(self, item_type):
         return self._get_registered_types()[item_type].subtypes
@@ -186,7 +191,6 @@ class AbstractQueryFactory:
     def _get_configs_from_config_param_values(self):
         return self._get_search_configs_by_names(
             self._get_config_param_values(),
-            use_defaults=False,
         )
 
     def _get_configs_from_item_types_as_combined_key(self):
@@ -252,7 +256,11 @@ class AbstractQueryFactory:
         }
 
     def _get_columns_for_item_type(self, item_type):
-        return self._get_search_config_for_item_type(item_type).get(COLUMNS, {})
+        return self._extract_columns_from_configs(
+            self._get_search_configs_for_item_type(
+                item_type
+            )
+        )
 
     def _get_columns_for_item_types(self, item_types=None):
         columns = self._get_base_columns()
