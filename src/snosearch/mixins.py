@@ -107,6 +107,9 @@ class AggsToFacetsMixin:
                         subfacets[1:],
                     )
                 }
+                for additional_field in ADDITIONAL_FACET_FIELDS:
+                    if additional_field in subfacets[0]:
+                        result[SUBFACET][additional_field] = subfacets[0][additional_field]
             results.append(result)
         return results
 

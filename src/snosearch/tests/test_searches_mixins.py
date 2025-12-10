@@ -1734,7 +1734,7 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_aggregation_bucket_to_list(r
     assert len(actual) == len(expected)
 
 
-def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response):
+def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket_single(raw_response):
     from snosearch.mixins import AggsToFacetsMixin
     afm = AggsToFacetsMixin()
     expected = [
@@ -1746,7 +1746,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'motor neuron', 'doc_count': 14}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1757,7 +1760,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'motor neuron', 'doc_count': 6}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1768,7 +1774,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'motor neuron', 'doc_count': 3}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1779,7 +1788,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'whole organism', 'doc_count': 2}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1790,7 +1802,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'technical sample', 'doc_count': 1}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1801,7 +1816,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'lung', 'doc_count': 1}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         }
     ]
@@ -1811,6 +1829,9 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
             {
                 'field': 'samples.sample_terms.term_name',
                 'title': 'Sample term name',
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True
             }
         ]
     )
@@ -2025,13 +2046,19 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket_custom_data(
             {
                 'field': 'preferred_assay_title',
                 'title': 'Preferred assay title',
+                'description': 'The common name for the assay',
             },
             {
                 'field': 'status',
                 'title': 'Status',
+                'description': 'The status of the object',
             }
         ]
     )
+    assert actual[0]['subfacet']['title'] == 'Preferred assay title'
+    assert actual[0]['subfacet']['description'] == 'The common name for the assay'
+    assert actual[0]['subfacet']['terms'][0]['subfacet']['description'] == 'The status of the object'
+    assert actual[0]['subfacet']['terms'][0]['subfacet']['title'] == 'Status'
     assert len(actual[0]['subfacet']['terms']) == 10
     assert len(actual[0]['subfacet']['terms'][0]['subfacet']['terms']) == 1
 
