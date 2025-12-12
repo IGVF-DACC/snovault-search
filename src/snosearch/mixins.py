@@ -2,6 +2,7 @@ from collections import defaultdict
 from collections import OrderedDict
 from functools import lru_cache
 
+from .defaults import ADDITIONAL_FACET_FIELDS
 from .defaults import AUDIT_FIELDS
 from .defaults import KEEP_LAYERED_FIELDS
 from .interfaces import APPENDED
@@ -67,6 +68,9 @@ class AggsToFacetsMixin:
     def _get_facet_subfacets(self, facet_name):
         return self._get_facets().get(facet_name, {}).get(SUBFACETS, [])
 
+    def _get_facet_additional_field(self, facet_name, additional_field):
+        return self._get_facets().get(facet_name, {}).get(additional_field)
+
     def _parse_aggregation_bucket_to_list(self, aggregation_bucket):
         '''
         Specifically parses filters aggregations.
@@ -103,6 +107,9 @@ class AggsToFacetsMixin:
                         subfacets[1:],
                     )
                 }
+                for additional_field in ADDITIONAL_FACET_FIELDS:
+                    if additional_field in subfacets[0]:
+                        result[SUBFACET][additional_field] = subfacets[0][additional_field]
             results.append(result)
         return results
 
@@ -184,6 +191,13 @@ class AggsToFacetsMixin:
             APPENDED: JS_FALSE,
             OPEN_ON_LOAD: self._get_facet_open_on_load(facet_name),
         }
+        for additional_field in ADDITIONAL_FACET_FIELDS:
+            additional_value = self._get_facet_additional_field(
+                facet_name,
+                additional_field,
+            )
+            if additional_value is not None:
+                facet[additional_field] = additional_value
         if facet.get(TERMS):
             self.facets.append(facet)
 

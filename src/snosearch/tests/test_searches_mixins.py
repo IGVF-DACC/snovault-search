@@ -6,15 +6,14 @@ def snowflakes_facets():
     return {
         k: v
         for k, v in [
-                ('type', {'title': 'Data Type', 'exclude': ['Item']}),
                 ('audit.ERROR.category', {'title': 'Audit category: ERROR'}),
                 ('audit.NOT_COMPLIANT.category', {'title': 'Audit category: NOT COMPLIANT'}),
                 ('audit.WARNING.category', {'title': 'Audit category: WARNING'}),
-                ('status', {'title': 'Snowflake status', 'open_on_load': True}),
-                ('type', {'title': 'Snowflake type', 'open_on_load': False}),
-                ('lab.title', {'title': 'Lab', 'open_on_load': False}),
+                ('status', {'title': 'Snowflake status', 'open_on_load': True, 'description': 'The status of an item', 'extra': 'not included'}),
+                ('type', {'title': 'Snowflake type', 'open_on_load': False, 'category': 'something'}),
+                ('lab.title', {'title': 'Lab', 'open_on_load': False, 'description': 'The title of the lab'}),
                 ('file_size', {'title': 'File size statistics', 'type': 'stats'}),
-                ('restricted', {'title': 'File is restricted', 'type': 'exists'}),
+                ('restricted', {'title': 'File is restricted', 'type': 'exists', 'optional': False}),
                 (
                     'samples.classifications', {
                         'title': 'Sample classifications',
@@ -1735,7 +1734,7 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_aggregation_bucket_to_list(r
     assert len(actual) == len(expected)
 
 
-def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response):
+def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket_single(raw_response):
     from snosearch.mixins import AggsToFacetsMixin
     afm = AggsToFacetsMixin()
     expected = [
@@ -1747,7 +1746,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'motor neuron', 'doc_count': 14}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1758,7 +1760,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'motor neuron', 'doc_count': 6}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1769,7 +1774,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'motor neuron', 'doc_count': 3}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1780,7 +1788,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'whole organism', 'doc_count': 2}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1791,7 +1802,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'technical sample', 'doc_count': 1}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         },
         {
@@ -1802,7 +1816,10 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
                 'title': 'Sample term name',
                 'terms': [
                     {'key': 'lung', 'doc_count': 1}
-                ]
+                ],
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True,
             }
         }
     ]
@@ -1812,6 +1829,9 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket(raw_response
             {
                 'field': 'samples.sample_terms.term_name',
                 'title': 'Sample term name',
+                'description': 'The name of the sample',
+                'category': 'ontology',
+                'optional': True
             }
         ]
     )
@@ -2026,13 +2046,19 @@ def test_searches_mixins_aggs_to_facets_mixin_parse_subfacet_bucket_custom_data(
             {
                 'field': 'preferred_assay_title',
                 'title': 'Preferred assay title',
+                'description': 'The common name for the assay',
             },
             {
                 'field': 'status',
                 'title': 'Status',
+                'description': 'The status of the object',
             }
         ]
     )
+    assert actual[0]['subfacet']['title'] == 'Preferred assay title'
+    assert actual[0]['subfacet']['description'] == 'The common name for the assay'
+    assert actual[0]['subfacet']['terms'][0]['subfacet']['description'] == 'The status of the object'
+    assert actual[0]['subfacet']['terms'][0]['subfacet']['title'] == 'Status'
     assert len(actual[0]['subfacet']['terms']) == 10
     assert len(actual[0]['subfacet']['terms'][0]['subfacet']['terms']) == 1
 
@@ -2630,6 +2656,11 @@ def test_searches_mixins_aggs_to_facets_mixin_to_facets(
     AggsToFacetsMixin._get_facets.return_value = snowflakes_facets
     actual = basic_query_response_with_facets.to_facets()
     assert len(actual) == 17
+    assert actual[0]['field'] == 'status'
+    assert actual[0]['description'] == 'The status of an item'
+    assert 'extra' not in actual[0]
+    assert actual[1]['category'] == 'something'
+    assert actual[4]['optional'] is False
 
 
 def test_searches_mixins_hits_to_graph_mixin_init():
